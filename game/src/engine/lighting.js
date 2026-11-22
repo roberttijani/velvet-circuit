@@ -1,7 +1,11 @@
 /**
- * lighting.js - Dynamic 2D Lighting, Volumetric Cones, Scanlines & Shadow Engine (v2)
- * Features dynamic obstacle occlusion from pillars and server racks, volumetric gradients,
- * moving digital scanlines, and coherent pulsing laser beams.
+ * lighting.js - Neo-Noir Atmospheric Lighting & Volumetric Illumination Engine (v4)
+ * Coordinates:
+ * - Warm golden spotlights over loot pedestals, exhibits, and boardroom tables
+ * - Cool ambient corridor moonlight and underfloor glow
+ * - Raycasted volumetric guard vision cones with soft edges and flashlight lens flare
+ * - Wall-mounted CCTV surveillance scanlines
+ * - Laser tripwire floor bounce and emitter boxes
  */
 
 import { buildVisibilityPolygon, getFurnitureOccluderSegments } from '../world/raycast.js';
@@ -11,10 +15,67 @@ export class LightingEngine {
     this.width = width;
     this.height = height;
     this.scanlineOffset = 0;
+    this.time = 0;
   }
 
   update(dt) {
+    this.time += dt;
     this.scanlineOffset = (this.scanlineOffset + dt * 45) % 12;
+  }
+
+  /**
+   * Renders ambient atmospheric lighting pools (warm gold spotlights & cool ambient washes).
+   */
+  renderAtmosphericLighting(ctx, level, thief) {
+    if (!level) return;
+    ctx.save();
+
+    // 1. Warm Golden Spotlight over Heist Loot Pedestal
+    if (level.loot) {
+      const lx = level.loot.x;
+      const ly = level.loot.y;
+      const pulse = 0.85 + 0.15 * Math.sin(this.time * 3);
+      const spotGrad = ctx.createRadialGradient(lx, ly, 8, lx, ly, 110 * pulse);
+      spotGrad.addColorStop(0, "rgba(251, 191, 36, 0.32)");
+      spotGrad.addColorStop(0.5, "rgba(245, 158, 11, 0.14)");
+      spotGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
+
+      ctx.fillStyle = spotGrad;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 110 * pulse, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 2. Warm spotlights over museum vitrines / boardroom table
+    if (level.furniture) {
+      for (let f of level.furniture) {
+        if (f.type === "vitrine" || (f.type === "desk" && f.label && f.label.includes("BOARD"))) {
+          const fx = f.x + f.w * 0.5;
+          const fy = f.y + f.h * 0.5;
+          const grad = ctx.createRadialGradient(fx, fy, 4, fx, fy, Math.max(f.w, f.h) * 0.85);
+          grad.addColorStop(0, "rgba(254, 240, 138, 0.22)");
+          grad.addColorStop(0.7, "rgba(245, 158, 11, 0.06)");
+          grad.addColorStop(1, "rgba(245, 158, 11, 0)");
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(fx, fy, Math.max(f.w, f.h) * 0.85, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // 3. Cool cyan ambient glow around thief operative
+    const tg = ctx.createRadialGradient(thief.x, thief.y, 4, thief.x, thief.y, 75);
+    tg.addColorStop(0, "rgba(0, 240, 255, 0.16)");
+    tg.addColorStop(0.7, "rgba(0, 160, 255, 0.05)");
+    tg.addColorStop(1, "rgba(0, 100, 255, 0)");
+    ctx.fillStyle = tg;
+    ctx.beginPath();
+    ctx.arc(thief.x, thief.y, 75, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   }
 
   /**
@@ -44,28 +105,32 @@ export class LightingEngine {
     ctx.closePath();
 
     // Determine colors based on guard alert state
-    let innerColor, outerColor, edgeColor;
+    let innerColor, midColor, outerColor, edgeColor;
     if (guard.state === "ALERT") {
-      innerColor = "rgba(255, 30, 60, 0.48)";
-      outerColor = "rgba(255, 0, 30, 0.05)";
-      edgeColor = "rgba(255, 60, 80, 0.90)";
+      innerColor = "rgba(255, 30, 60, 0.55)";
+      midColor = "rgba(255, 20, 50, 0.22)";
+      outerColor = "rgba(255, 0, 30, 0.04)";
+      edgeColor = "rgba(255, 60, 80, 0.95)";
     } else if (guard.state === "INVESTIGATING" || guard.state === "SUSPICIOUS") {
-      innerColor = "rgba(255, 180, 0, 0.42)";
-      outerColor = "rgba(255, 120, 0, 0.04)";
-      edgeColor = "rgba(255, 200, 40, 0.85)";
+      innerColor = "rgba(255, 180, 0, 0.48)";
+      midColor = "rgba(255, 140, 0, 0.18)";
+      outerColor = "rgba(255, 120, 0, 0.03)";
+      edgeColor = "rgba(255, 200, 40, 0.90)";
     } else {
-      // Normal patrol: volumetric tactical amber/yellow-white
-      innerColor = "rgba(255, 225, 150, 0.32)";
-      outerColor = "rgba(255, 200, 100, 0.03)";
-      edgeColor = "rgba(255, 220, 130, 0.65)";
+      // Normal patrol: volumetric warm tactical amber/yellow
+      innerColor = "rgba(255, 225, 150, 0.36)";
+      midColor = "rgba(255, 200, 120, 0.14)";
+      outerColor = "rgba(255, 180, 90, 0.02)";
+      edgeColor = "rgba(255, 220, 130, 0.75)";
     }
 
     const grad = ctx.createRadialGradient(
-      guard.x, guard.y, 8,
+      guard.x, guard.y, 6,
       guard.x, guard.y, guard.viewDist
     );
     grad.addColorStop(0, innerColor);
-    grad.addColorStop(0.7, outerColor);
+    grad.addColorStop(0.4, midColor);
+    grad.addColorStop(0.85, outerColor);
     grad.addColorStop(1, "rgba(0, 0, 0, 0)");
 
     ctx.fillStyle = grad;
@@ -75,6 +140,18 @@ export class LightingEngine {
     ctx.strokeStyle = edgeColor;
     ctx.lineWidth = 1.2;
     ctx.stroke();
+
+    // Flashlight source lens flare
+    const flareX = guard.x + Math.cos(guard.facing) * 11;
+    const flareY = guard.y + Math.sin(guard.facing) * 11;
+    const flareGrad = ctx.createRadialGradient(flareX, flareY, 1, flareX, flareY, 9);
+    flareGrad.addColorStop(0, "#FFFFFF");
+    flareGrad.addColorStop(0.4, edgeColor);
+    flareGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = flareGrad;
+    ctx.beginPath();
+    ctx.arc(flareX, flareY, 9, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
@@ -137,26 +214,26 @@ export class LightingEngine {
     );
 
     if (isTripped) {
-      grad.addColorStop(0, "rgba(255, 0, 60, 0.55)");
-      grad.addColorStop(0.75, "rgba(255, 0, 60, 0.10)");
+      grad.addColorStop(0, "rgba(255, 0, 60, 0.60)");
+      grad.addColorStop(0.75, "rgba(255, 0, 60, 0.12)");
       grad.addColorStop(1, "rgba(255, 0, 60, 0)");
     } else {
       // Sweeping cyan surveillance beam
-      grad.addColorStop(0, "rgba(0, 240, 255, 0.38)");
-      grad.addColorStop(0.75, "rgba(0, 160, 255, 0.08)");
+      grad.addColorStop(0, "rgba(0, 240, 255, 0.42)");
+      grad.addColorStop(0.75, "rgba(0, 160, 255, 0.10)");
       grad.addColorStop(1, "rgba(0, 100, 255, 0)");
     }
 
     ctx.fillStyle = grad;
     ctx.fill();
 
-    ctx.strokeStyle = isTripped ? "rgba(255, 30, 60, 0.9)" : "rgba(0, 240, 255, 0.75)";
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = isTripped ? "rgba(255, 30, 60, 0.95)" : "rgba(0, 240, 255, 0.85)";
+    ctx.lineWidth = 1.4;
     ctx.stroke();
 
     // Moving digital raster scanlines
     ctx.clip();
-    ctx.strokeStyle = isTripped ? "rgba(255, 60, 90, 0.22)" : "rgba(0, 255, 255, 0.18)";
+    ctx.strokeStyle = isTripped ? "rgba(255, 60, 90, 0.24)" : "rgba(0, 255, 255, 0.20)";
     ctx.lineWidth = 1;
     for (let y = 0; y < this.height; y += 6) {
       const lineY = (y + this.scanlineOffset) % this.height;
@@ -170,101 +247,76 @@ export class LightingEngine {
   }
 
   /**
-   * Renders glowing coherent laser grid beam with bloom and emitter nodes.
+   * Renders glowing coherent laser grid beam with floor bounce and emitter boxes.
    */
   renderLaserBeam(ctx, laser) {
     if (!laser.active || laser.disabledTimer > 0) return;
 
     ctx.save();
-    // Laser outer bloom
-    ctx.strokeStyle = "rgba(255, 0, 60, 0.35)";
-    ctx.lineWidth = 8;
+
+    // 1. Floor bounce ambient glow along beam axis
+    ctx.strokeStyle = "rgba(255, 0, 60, 0.18)";
+    ctx.lineWidth = 18;
     ctx.beginPath();
     ctx.moveTo(laser.x1, laser.y1);
     ctx.lineTo(laser.x2, laser.y2);
     ctx.stroke();
 
-    // Core laser glow
+    // 2. Outer high-intensity bloom
+    ctx.strokeStyle = "rgba(255, 0, 60, 0.45)";
+    ctx.lineWidth = 7;
+    ctx.stroke();
+
+    // 3. Core coherent laser beam
     ctx.strokeStyle = "#FF003C";
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Intense center core thread
+    // 4. Intense white center thread
     ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // Emitter node caps
+    // 5. Wall-mounted emitter casings
+    this.renderLaserEmitterNode(ctx, laser.x1, laser.y1);
+    this.renderLaserEmitterNode(ctx, laser.x2, laser.y2);
+
+    ctx.restore();
+  }
+
+  renderLaserEmitterNode(ctx, x, y) {
+    ctx.save();
+    ctx.fillStyle = "#0F172A";
+    ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x - 4, y - 4, 8, 8);
+
     ctx.fillStyle = "#FF003C";
     ctx.beginPath();
-    ctx.arc(laser.x1, laser.y1, 4, 0, Math.PI * 2);
-    ctx.arc(laser.x2, laser.y2, 4, 0, Math.PI * 2);
+    ctx.arc(x, y, 2.5, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.restore();
   }
 
   /**
-   * Renders expanding sound-wave ripples.
-   */
-  renderSoundRipples(ctx, ripples) {
-    ctx.save();
-    for (let r of ripples) {
-      if (!r.active || r.alpha <= 0) continue;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha * 0.85})`;
-      ctx.lineWidth = 2.0;
-      ctx.beginPath();
-      ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-      ctx.stroke();
-
-      if (r.radius > 16) {
-        ctx.strokeStyle = `rgba(0, 240, 255, ${r.alpha * 0.45})`;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius * 0.65, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-    }
-    ctx.restore();
-  }
-
-  /**
-   * Renders footstep trails.
+   * Renders directional bootstep trails.
    */
   renderFootsteps(ctx, footsteps) {
+    if (!footsteps || footsteps.length === 0) return;
     ctx.save();
     for (let step of footsteps) {
       if (step.alpha <= 0) continue;
       ctx.save();
       ctx.translate(step.x, step.y);
       ctx.rotate(step.facing);
-      ctx.fillStyle = `rgba(0, 240, 255, ${step.alpha * 0.32})`;
-      ctx.fillRect(-3, -4, 3, 7);
-      ctx.fillRect(1, -4, 3, 7);
+
+      // Dual boot tread marks
+      ctx.fillStyle = `rgba(0, 240, 255, ${step.alpha * 0.35})`;
+      ctx.fillRect(-3.5, -4.5, 3, 7.5);
+      ctx.fillRect(0.5, -4.5, 3, 7.5);
+
       ctx.restore();
-    }
-    ctx.restore();
-  }
-
-  /**
-   * Renders dense volumetric smoke screen clouds.
-   */
-  renderSmokeClouds(ctx, smokeClouds) {
-    ctx.save();
-    for (let sc of smokeClouds) {
-      if (!sc.active || sc.alpha <= 0) continue;
-      const grad = ctx.createRadialGradient(
-        sc.x, sc.y, sc.radius * 0.15,
-        sc.x, sc.y, sc.radius
-      );
-      grad.addColorStop(0, `rgba(190, 220, 240, ${sc.alpha * 0.75})`);
-      grad.addColorStop(0.55, `rgba(120, 150, 185, ${sc.alpha * 0.50})`);
-      grad.addColorStop(1, "rgba(60, 90, 120, 0)");
-
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(sc.x, sc.y, sc.radius, 0, Math.PI * 2);
-      ctx.fill();
     }
     ctx.restore();
   }

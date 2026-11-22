@@ -54,12 +54,12 @@ Every gameplay frame unmistakably showcases:
 - **Diegetic Foley SFX**: Tactile bootsteps, metallic coin clinks, EMP power discharges, smoke hissing, computer terminal hacking sequences, and alarm sirens.
 - **Zero External Audio Assets**: 100% synthesized in-memory with zero network requests.
 
-### 6. Precision Polish & Visual Clarity (v3 Updates)
-- **Dynamic Interaction Pills**: All `[E]` interaction badges (terminals, overrides, and multi-word loot targets) dynamically compute exact pixel pill dimensions with safe margins, ensuring labels like `[E] SECURE THE STAR OF ALEXANDRIA` and `[E] SECURE QUANTUM CRYPTO CIPHER` never truncate.
-- **Strict FOV Relative Angle Sorting**: Visibility polygon generator calculates relative angle delta in `[-halfFov, +halfFov]`, completely eliminating collinear edge artifacts and stray cone slivers across complex multi-room doorways.
-- **Prominent Wall Surveillance Optics**: Recalibrated wall-mounted camera housings with volumetric cyan scanline beams sweeping unobstructed across active exhibition halls.
-- **Precision Element Composition**: Calibrated EMP shockwaves and decoy coin acoustic ripples centered cleanly within navigable corridor nodes without clipping architectural borders or room titles.
-- **Mission Debrief S-Rank Tactical Scorecard**: End-of-heist debrief interface displaying mission analytics, valuations, stealth performance, and multi-floor contract progression.
+### 6. 2.5D Illuminated Neo-Noir Overhaul (v4 Updates)
+- **Procedural Floor Textures (`engine/textures.js`)**: Offline canvas pattern synthesis generating veined marble tiles, brushed gunmetal floor grates, dark mahogany herringbone parquet, and crimson-and-gold woven velvet runners.
+- **Architectural 2.5D Walls & Props (`world/props.js`)**: Pseudo-perspective walls with dark structural caps, lit south-facing vertical facades (8px drop with baseboard trim), and soft drop shadows. World props include fluted marble columns, museum vitrines with diagonal specular glass reflection sheen, framed oil paintings with downward picture lights, detailed server racks with animated LED arrays, boardroom conference tables with surround chairs, and a heavy circular titanium vault door with a spoked wheel.
+- **Atmospheric Lighting, Bloom & Particles (`engine/lighting.js`, `engine/particles.js`)**: Warm golden spotlights over loot targets and museum exhibits, cool corridor ambient illumination, laser tripwires with wall emitter casings and floor bounce glow, crackling electric-blue EMP lightning arcs with floating `[ OFFLINE 4.2s ]` diegetic countdown, and multi-layered swirling volumetric smoke clouds.
+- **Articulated Characters & Security Turrets**: Operative rendered with dark tactical coat shoulders, hooded head, glowing dual cyan NVG optics, articulated arms, and **visibly radiating loot satchel** once the target artifact is secured. Sentries equipped with armor plates, peaked helmets, and tactical flashlights emitting raycast cones.
+- **Studio Obsidian Glass HUD & Tactical Minimap (`ui/hud.js`, `ui/minimap.js`, `ui/debrief.js`)**: Translucent obsidian panels with gold and cyan architectural trim, live `TARGET VALUATION` ($140M / $85M / $62.5M) counter, 10-segment high-contrast LED Alarm Meter, custom Canvas vector gadget icons, a live vector radar minimap pod with operative pulse and sentry vision blips, and an S-Rank mission debrief modal with vector operative crest.
 
 ---
 
@@ -71,21 +71,26 @@ velvet-circuit/
 │   ├── index.html                  # Offline desktop HTML5 Canvas viewport
 │   └── src/
 │       ├── engine/
-│       │   ├── renderer.js         # Blueprint floorplans, furniture, loot & operative
-│       │   ├── lighting.js         # 2D Raycast volumetric cones, scanlines, lasers & ripples
+│       │   ├── renderer.js         # 2.5D walls, materials, furniture & character renderer
+│       │   ├── lighting.js         # Atmospheric spotlights, volumetric cones & laser bloom
+│       │   ├── textures.js         # Procedural offscreen canvas patterns (marble, grate, parquet)
+│       │   ├── particles.js        # Swirling smoke veil, EMP arcs, dust motes & sound waves
 │       │   └── audio.js            # Offline procedural Web Audio API synthesizer
 │       ├── ai/
 │       │   ├── guardFSM.js         # Guard AI state machine (Patrol, Suspicious, Alert)
 │       │   └── cameraSystem.js     # CCTV sinusoidal sweep, scanline beam & EMP disable
 │       ├── world/
 │       │   ├── levels.js           # 3 Handcrafted blueprints (Gallery, Vault, Penthouse)
-│       │   └── raycast.js          # Visibility polygon, segment occlusion & line of sight
+│       │   ├── props.js            # 2.5D props (vitrines, artworks, server racks, vault door)
+│       │   └── raycast.js          # Visibility polygon, obstacle occlusion & line of sight
 │       ├── gameplay/
 │       │   ├── thiefController.js  # WASD movement, sneak/sprint, collision & hacking
 │       │   ├── gadgets.js          # Decoy coins, EMP pulse, and smoke screen clouds
 │       │   └── alarmSystem.js      # Global threat tracker (GHOST, SUSPICIOUS, LOCKDOWN)
 │       ├── ui/
-│       │   └── hud.js              # Mission header, gadget bar, bold threat meter & wheel
+│       │   ├── hud.js              # Studio obsidian glass HUD with vector gadget icons
+│       │   ├── minimap.js          # Real-time vector tactical blueprint radar pod
+│       │   └── debrief.js          # S-Rank tactical debrief modal & contract progression cards
 │       ├── shots.js                # Deterministic screenshot scenario staging
 │       └── main.js                 # Master loop, event bindings & game bootstrap
 ├── screenshots/                    # 4 Native 1280x480 PNG renders (< 256 KiB each)

@@ -11,6 +11,13 @@ export const LEVEL_1_GALLERY = {
   subtitle: "GROUND FLOOR // EXHIBITION WING",
   blueprintCode: "BLPR-SEC01-ATRIUM",
   floorType: "gallery",
+  lootValue: "$140,000,000",
+  artworks: [
+    { x: 215, y: 46, w: 42, h: 18, palette: ["#1E293B", "#F59E0B", "#0284C7"] },
+    { x: 280, y: 46, w: 42, h: 18, palette: ["#0F172A", "#10B981", "#E2E8F0"] },
+    { x: 590, y: 46, w: 50, h: 18, palette: ["#1E1B4B", "#EC4899", "#818CF8"] },
+    { x: 740, y: 46, w: 50, h: 18, palette: ["#14532D", "#FDE047", "#38BDF8"] }
+  ],
   thiefStart: { x: 100, y: 380, facing: 0 },
   loot: {
     name: "THE STAR OF ALEXANDRIA",
@@ -178,6 +185,7 @@ export const LEVEL_2_SERVER_VAULT = {
   subtitle: "SUB-LEVEL B2 // DATA REPOSITORY",
   blueprintCode: "BLPR-SEC02-MAINFRAME",
   floorType: "server",
+  lootValue: "$85,000,000",
   thiefStart: { x: 90, y: 90, facing: 0 },
   loot: {
     name: "QUANTUM CRYPTO CIPHER",
@@ -371,6 +379,8 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
   subtitle: "PENTHOUSE LEVEL 88 // EXECUTIVE SAFE",
   blueprintCode: "BLPR-SEC03-SANCTUM",
   floorType: "penthouse",
+  lootValue: "$62,500,000",
+  vaultDoor: { x: 960, y: 240, radius: 26 },
   thiefStart: { x: 90, y: 240, facing: 0 },
   loot: {
     name: "SOVEREIGN LEDGER & BULLION",

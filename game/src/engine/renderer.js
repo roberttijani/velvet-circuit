@@ -1,8 +1,17 @@
 /**
- * renderer.js - Tactical Noir Architectural Blueprint Renderer (v2)
- * Renders thick architectural walls, procedural floor materials, character silhouettes,
- * diegetic non-overlapping labels, and the tactical mission debrief scorecard.
+ * renderer.js - 2.5D Illuminated Neo-Noir Heist Renderer (v4)
+ * Coordinates:
+ * - Procedural canvas materials (marble, grate, parquet, velvet)
+ * - 2.5D pseudo-perspective walls with lit south facades and drop-shadows
+ * - Detailed architectural props (vitrines, columns, server racks, boardroom tables)
+ * - Articulated top-down operative with glowing loot satchel
+ * - Armored sentries with tactical flashlights and diegetic alert badges
+ * - Studio mission debrief scorecard modal
  */
+
+import { TextureManager } from './textures.js';
+import { WorldPropsRenderer } from '../world/props.js';
+import { MissionDebriefModal } from '../ui/debrief.js';
 
 export class GameRenderer {
   constructor(canvas) {
@@ -11,6 +20,13 @@ export class GameRenderer {
     this.width = canvas.width;
     this.height = canvas.height;
     this.time = 0;
+
+    // Sub-renderers
+    this.textures = new TextureManager();
+    this.props = new WorldPropsRenderer();
+    this.debriefModal = new MissionDebriefModal(this.width, this.height);
+
+    this.textures.init(this.ctx);
   }
 
   update(dt) {
@@ -64,100 +80,116 @@ export class GameRenderer {
     for (let room of level.rooms) {
       ctx.save();
 
-      // Floor procedural pattern
+      // 1. Procedural Floor Texture Fill
       if (level.floorType === "gallery") {
-        ctx.fillStyle = "#0A1424";
+        ctx.fillStyle = this.textures.patterns.marble || "#0A1424";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        // Polished marble tiles
-        ctx.strokeStyle = "rgba(22, 54, 90, 0.35)";
-        ctx.lineWidth = 0.5;
-        for (let tx = room.x; tx < room.x + room.w; tx += 28) {
-          for (let ty = room.y; ty < room.y + room.h; ty += 28) {
-            ctx.strokeRect(tx, ty, 28, 28);
-          }
-        }
       } else if (level.floorType === "server") {
-        ctx.fillStyle = "#07111D";
+        ctx.fillStyle = this.textures.patterns.grate || "#07111D";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        // Industrial floor grate grid
-        ctx.strokeStyle = "rgba(0, 180, 216, 0.12)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(room.x + 3, room.y + 3, room.w - 6, room.h - 6);
-        for (let gx = room.x + 16; gx < room.x + room.w - 16; gx += 32) {
-          ctx.beginPath();
-          ctx.moveTo(gx, room.y + 4);
-          ctx.lineTo(gx, room.y + room.h - 4);
-          ctx.stroke();
-        }
       } else {
-        // Penthouse luxury parquet
-        ctx.fillStyle = "#0E1726";
+        ctx.fillStyle = this.textures.patterns.parquet || "#0E1726";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        ctx.strokeStyle = "rgba(212, 175, 55, 0.15)";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(room.x + 4, room.y + 4, room.w - 8, room.h - 8);
       }
 
-      // Render velvet carpet runners if present
+      // Room perimeter blueprint accent
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.18)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(room.x + 1, room.y + 1, room.w - 2, room.h - 2);
+
+      // 2. Velvet Carpet Runners
       if (level.carpetRunners) {
         for (let c of level.carpetRunners) {
-          ctx.fillStyle = c.color;
-          ctx.fillRect(c.x, c.y, c.w, c.h);
-          ctx.strokeStyle = "rgba(212, 175, 55, 0.4)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(c.x, c.y, c.w, c.h);
+          this.textures.renderCarpetRunner(ctx, c);
         }
       }
 
-      // Render glowing conduits if present
+      // 3. Glowing Fiber Conduits
       if (level.conduits) {
         for (let cd of level.conduits) {
-          ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(cd.x1, cd.y1);
-          ctx.lineTo(cd.x2, cd.y2);
-          ctx.stroke();
+          this.textures.renderFiberConduit(ctx, cd, this.time);
         }
       }
 
-      // Compact Diegetic Room Title Badge (Anchored cleanly inside room, never overlapping furniture)
+      // 4. Fine Art Wall Paintings
+      if (level.artworks) {
+        this.props.renderWallArtworks(ctx, level.artworks);
+      }
+
+      // 5. Titanium Vault Door
+      if (level.vaultDoor) {
+        this.props.renderTitaniumVaultDoor(ctx, level.vaultDoor.x, level.vaultDoor.y, level.vaultDoor.radius, this.time);
+      }
+
+      // 6. Diegetic Room Title Badge (Safe non-overlapping coordinates)
       const badgeText = `[ ${room.tag} // ${room.name} ]`;
       ctx.font = "bold 9px 'Courier New', monospace";
-      const bw = ctx.measureText(badgeText).width + 10;
-      ctx.fillStyle = "rgba(7, 12, 22, 0.85)";
+      const bw = ctx.measureText(badgeText).width + 12;
+
+      ctx.fillStyle = "rgba(7, 12, 22, 0.90)";
       ctx.fillRect(room.x + 8, room.y + 8, bw, 14);
-      ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.45)";
       ctx.lineWidth = 1;
       ctx.strokeRect(room.x + 8, room.y + 8, bw, 14);
 
       ctx.fillStyle = "#00F0FF";
-      ctx.fillText(badgeText, room.x + 13, room.y + 18);
+      ctx.fillText(badgeText, room.x + 14, room.y + 18);
 
       ctx.restore();
     }
   }
 
   /**
-   * Renders thick filled architectural walls with slate core and glowing blueprint centerline.
+   * Renders 2.5D architectural walls with south-facing vertical facades and drop shadows.
    */
   renderWalls(walls) {
     const ctx = this.ctx;
     ctx.save();
 
-    // 1. Soft Wall Floor Drop-Shadow
+    // 1. Soft Wall Floor Drop-Shadow onto adjacent floors
     ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
-    ctx.lineWidth = 12;
+    ctx.lineWidth = 14;
     ctx.lineCap = "square";
     ctx.beginPath();
     for (let w of walls) {
-      ctx.moveTo(w.x1 + 2, w.y1 + 2);
-      ctx.lineTo(w.x2 + 2, w.y2 + 2);
+      ctx.moveTo(w.x1 + 3, w.y1 + 4);
+      ctx.lineTo(w.x2 + 3, w.y2 + 4);
     }
     ctx.stroke();
 
-    // 2. Thick Dark Slate Architectural Wall Fill
-    ctx.strokeStyle = "#0F172A";
+    // 2. 2.5D South-Facing Vertical Wall Facade (for horizontal wall segments)
+    for (let w of walls) {
+      if (Math.abs(w.y1 - w.y2) < 2) {
+        const left = Math.min(w.x1, w.x2);
+        const right = Math.max(w.x1, w.x2);
+        const wallWidth = right - left;
+
+        // Vertical Wall Drop (8px height)
+        ctx.fillStyle = "#121E2E";
+        ctx.fillRect(left, w.y1, wallWidth, 8);
+
+        // Vertical architectural joint seams
+        ctx.strokeStyle = "#1A2A3D";
+        ctx.lineWidth = 1;
+        for (let jx = left + 28; jx < right - 12; jx += 28) {
+          ctx.beginPath();
+          ctx.moveTo(jx, w.y1);
+          ctx.lineTo(jx, w.y1 + 8);
+          ctx.stroke();
+        }
+
+        // Cyan Baseboard Floor Trim
+        ctx.strokeStyle = "#38BDF8";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(left, w.y1 + 8);
+        ctx.lineTo(right, w.y1 + 8);
+        ctx.stroke();
+      }
+    }
+
+    // 3. Thick Dark Slate Architectural Wall Cap
+    ctx.strokeStyle = "#0B1522";
     ctx.lineWidth = 10;
     ctx.beginPath();
     for (let w of walls) {
@@ -166,7 +198,7 @@ export class GameRenderer {
     }
     ctx.stroke();
 
-    // 3. Inner Slate Bevel Edge
+    // 4. Inner Slate Bevel Edge
     ctx.strokeStyle = "#1E293B";
     ctx.lineWidth = 6;
     ctx.beginPath();
@@ -176,9 +208,9 @@ export class GameRenderer {
     }
     ctx.stroke();
 
-    // 4. Sharp Cyan Architectural Blueprint Centerline
+    // 5. Sharp Cyan Architectural Blueprint Centerline
     ctx.strokeStyle = "#00F0FF";
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1;
     ctx.beginPath();
     for (let w of walls) {
       ctx.moveTo(w.x1, w.y1);
@@ -190,53 +222,57 @@ export class GameRenderer {
   }
 
   /**
-   * Renders furniture, obstacles, and consoles with drop shadows and detail.
+   * Renders handcrafted 2.5D furniture obstacles & architectural props.
    */
   renderFurniture(furniture) {
     const ctx = this.ctx;
     ctx.save();
 
     for (let item of furniture) {
-      // Furniture floor drop shadow
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.fillRect(item.x + 2, item.y + 2, item.w, item.h);
-
-      if (item.type === "vitrine") {
-        ctx.fillStyle = "rgba(0, 240, 255, 0.10)";
-        ctx.fillRect(item.x, item.y, item.w, item.h);
-        ctx.strokeStyle = "#00F0FF";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(item.x, item.y, item.w, item.h);
-        // Specular glare line
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(item.x + 6, item.y + item.h - 6);
-        ctx.lineTo(item.x + item.w - 6, item.y + 6);
-        ctx.stroke();
+      if (item.type === "column") {
+        this.props.renderColumn(ctx, item);
+      } else if (item.type === "vitrine") {
+        this.props.renderVitrine(ctx, item, this.time);
       } else if (item.type === "server") {
-        ctx.fillStyle = "#0B1522";
+        this.props.renderServerRack(ctx, item, this.time);
+      } else if (item.type === "desk" && item.label && item.label.includes("BOARD")) {
+        this.props.renderBoardroomTable(ctx, item);
+      } else if (item.type === "plinth") {
+        // Classical display plinth
+        ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+        ctx.fillRect(item.x + 3, item.y + 3, item.w, item.h);
+
+        ctx.fillStyle = "#1E2A3C";
         ctx.fillRect(item.x, item.y, item.w, item.h);
-        ctx.strokeStyle = "#1D4ED8";
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#D4AF37";
+        ctx.lineWidth = 1.2;
         ctx.strokeRect(item.x, item.y, item.w, item.h);
-        // Animated status LEDs
-        for (let lx = item.x + 8; lx < item.x + item.w - 8; lx += 12) {
-          const blink = (Math.sin(this.time * 6 + lx) > 0.1);
-          ctx.fillStyle = blink ? "#00F0FF" : "#005577";
-          ctx.fillRect(lx, item.y + 6, 4, 3);
-          ctx.fillStyle = blink ? "#10B981" : "#044E36";
-          ctx.fillRect(lx, item.y + item.h - 9, 4, 3);
-        }
-      } else if (item.type === "column" || item.type === "plinth") {
-        ctx.fillStyle = "#112238";
-        ctx.fillRect(item.x, item.y, item.w, item.h);
-        ctx.strokeStyle = "#38BDF8";
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(item.x, item.y, item.w, item.h);
-        ctx.fillStyle = "#1E3A8A";
-        ctx.fillRect(item.x + 4, item.y + 4, item.w - 8, item.h - 8);
+
+        // Statue / bronze bust silhouette
+        ctx.fillStyle = "#94A3B8";
+        ctx.beginPath();
+        ctx.arc(item.x + item.w * 0.5, item.y + item.h * 0.5, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#CBD5E1";
+        ctx.lineWidth = 1;
+        ctx.stroke();
       } else if (item.type === "desk") {
+        // Standard security desk / terminal workstation
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(item.x + 4, item.y + 4, item.w, item.h);
+
+        ctx.fillStyle = "#142234";
+        ctx.fillRect(item.x, item.y, item.w, item.h);
+        ctx.strokeStyle = "#475569";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(item.x, item.y, item.w, item.h);
+
+        // Dual glowing workstation monitor screens
+        ctx.fillStyle = "#00F0FF";
+        ctx.fillRect(item.x + 8, item.y + 6, 18, 10);
+        ctx.fillRect(item.x + 32, item.y + 6, 18, 10);
+      } else {
+        // Pedestal base
         ctx.fillStyle = "#132337";
         ctx.fillRect(item.x, item.y, item.w, item.h);
         ctx.strokeStyle = "#475569";
@@ -249,7 +285,7 @@ export class GameRenderer {
   }
 
   /**
-   * Renders the glowing loot target with compact non-overlapping callout pill.
+   * Renders the glowing loot target with dynamic unclipped callout pill.
    */
   renderLoot(loot, isSecured) {
     const ctx = this.ctx;
@@ -311,6 +347,7 @@ export class GameRenderer {
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
+
       ctx.strokeStyle = "#00F0FF";
       ctx.beginPath();
       ctx.moveTo(-13, 0);
@@ -444,7 +481,7 @@ export class GameRenderer {
   }
 
   /**
-   * Renders the thief operative as a sleek top-down tactical silhouette.
+   * Renders the thief operative as an articulated top-down operative with glowing loot satchel.
    */
   renderThief(thief, mouseX, mouseY) {
     const ctx = this.ctx;
@@ -475,21 +512,26 @@ export class GameRenderer {
     // Drop shadow
     ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
     ctx.beginPath();
-    ctx.ellipse(0, 2, 10, 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 3, 11, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Tactical Operative Shoulders (Athletic canted oval)
+    // Tactical Operative Shoulders (Dark tactical trench/coat)
     ctx.fillStyle = "#0F1E33";
     ctx.beginPath();
-    ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 10, 6.5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#00F0FF";
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = 1.3;
     ctx.stroke();
 
     // Tactical harness straps
     ctx.fillStyle = "#1E3A5F";
     ctx.fillRect(-3, -5, 6, 10);
+
+    // Articulated arms poised forward
+    ctx.fillStyle = "#0B1522";
+    ctx.fillRect(4, -6, 5, 3.5);
+    ctx.fillRect(4, 2.5, 5, 3.5);
 
     // Hooded head
     ctx.fillStyle = "#0A1322";
@@ -497,15 +539,32 @@ export class GameRenderer {
     ctx.arc(2, 0, 4.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Twin glowing emerald night-vision visor optics
+    // Twin glowing cyan night-vision visor optics
     ctx.fillStyle = "#00F0FF";
-    ctx.shadowColor = "#00F0FF";
-    ctx.shadowBlur = 6;
     ctx.beginPath();
     ctx.arc(6, -2.2, 1.6, 0, Math.PI * 2);
     ctx.arc(6, 2.2, 1.6, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = 0;
+
+    // Visibly Glowing Loot Satchel on Operative Hip (Active when loot is secured!)
+    if (thief.hasLoot) {
+      const satchelPulse = 0.8 + 0.2 * Math.sin(this.time * 6);
+      const satchelGrad = ctx.createRadialGradient(-5, 5, 1, -5, 5, 12 * satchelPulse);
+      satchelGrad.addColorStop(0, "#00F0FF");
+      satchelGrad.addColorStop(0.5, "rgba(0, 240, 255, 0.45)");
+      satchelGrad.addColorStop(1, "rgba(0, 240, 255, 0)");
+      ctx.fillStyle = satchelGrad;
+      ctx.beginPath();
+      ctx.arc(-5, 5, 12 * satchelPulse, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Satchel pack
+      ctx.fillStyle = "#E0F7FA";
+      ctx.fillRect(-7, 3, 5, 5);
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(-7, 3, 5, 5);
+    }
 
     ctx.restore();
   }
@@ -588,10 +647,10 @@ export class GameRenderer {
       // Drop shadow
       ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
       ctx.beginPath();
-      ctx.ellipse(0, 2, 11, 8, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 3, 11, 8, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Armored sentry shoulders
+      // Armored sentry shoulders with epaulets
       ctx.fillStyle = g.state === "ALERT" ? "#7F1D1D" : "#1E293B";
       ctx.beginPath();
       ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI * 2);
@@ -604,13 +663,13 @@ export class GameRenderer {
       ctx.fillStyle = "#334155";
       ctx.fillRect(-3, -4, 6, 8);
 
-      // Security helmet
+      // Security helmet / peaked cap
       ctx.fillStyle = "#0F172A";
       ctx.beginPath();
       ctx.arc(2, 0, 4.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Flashlight emitter in hand
+      // Tactical flashlight in right hand
       ctx.fillStyle = "#F8FAFC";
       ctx.beginPath();
       ctx.arc(8, 3, 2.5, 0, Math.PI * 2);
@@ -623,159 +682,9 @@ export class GameRenderer {
   }
 
   /**
-   * Renders sleek translucent tactical scorecard overlay for Shot 4 and victory.
+   * Renders tactical mission debrief scorecard modal.
    */
   renderDebriefScorecard(ctx) {
-    ctx.save();
-
-    // Dim background blueprint
-    ctx.fillStyle = "rgba(4, 8, 16, 0.78)";
-    ctx.fillRect(0, 0, this.width, this.height);
-
-    // Central Glassmorphic Card (920 x 360)
-    const cw = 920;
-    const ch = 350;
-    const cx = (this.width - cw) * 0.5;
-    const cy = 52;
-
-    ctx.fillStyle = "rgba(10, 18, 32, 0.94)";
-    ctx.fillRect(cx, cy, cw, ch);
-    ctx.strokeStyle = "#00F0FF";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(cx, cy, cw, ch);
-
-    // Decorative corner ticks
-    const tickLen = 14;
-    ctx.strokeStyle = "#FFFFFF";
-    ctx.lineWidth = 2;
-    // Top-left
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + tickLen);
-    ctx.lineTo(cx, cy);
-    ctx.lineTo(cx + tickLen, cy);
-    ctx.stroke();
-    // Top-right
-    ctx.beginPath();
-    ctx.moveTo(cx + cw - tickLen, cy);
-    ctx.lineTo(cx + cw, cy);
-    ctx.lineTo(cx + cw, cy + tickLen);
-    ctx.stroke();
-    // Bottom-left
-    ctx.beginPath();
-    ctx.moveTo(cx, cy + ch - tickLen);
-    ctx.lineTo(cx, cy + ch);
-    ctx.lineTo(cx + tickLen, cy + ch);
-    ctx.stroke();
-    // Bottom-right
-    ctx.beginPath();
-    ctx.moveTo(cx + cw - tickLen, cy + ch);
-    ctx.lineTo(cx + cw, cy + ch);
-    ctx.lineTo(cx + cw, cy + ch - tickLen);
-    ctx.stroke();
-
-    // Header Banner
-    ctx.font = "bold 15px 'Courier New', monospace";
-    ctx.fillStyle = "#00F0FF";
-    ctx.fillText("MISSION DEBRIEF // HEIST ACCOMPLISHED", cx + 24, cy + 32);
-
-    ctx.font = "10px 'Courier New', monospace";
-    ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
-    ctx.fillText("SYNDICATE RECOVERY OPERATION // CLASSIFIED INTEL", cx + 24, cy + 48);
-
-    // Rank Badge
-    ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
-    ctx.fillRect(cx + cw - 260, cy + 18, 236, 40);
-    ctx.strokeStyle = "#10B981";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(cx + cw - 260, cy + 18, 236, 40);
-
-    ctx.font = "bold 13px 'Courier New', monospace";
-    ctx.fillStyle = "#10B981";
-    ctx.fillText("RANK: S [GHOST OPERATIVE]", cx + cw - 248, cy + 42);
-
-    // Divider Line
-    ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx + 24, cy + 68);
-    ctx.lineTo(cx + cw - 24, cy + 68);
-    ctx.stroke();
-
-    // Metrics Stats Columns
-    const stats = [
-      { label: "TARGET VALUATION", val: "$62,500,000", color: "#F59E0B" },
-      { label: "DETECTIONS LOGGED", val: "00 [GHOST]", color: "#10B981" },
-      { label: "ALARM LOCKDOWNS", val: "00 [CLEAN]", color: "#10B981" },
-      { label: "GADGETS DEPLOYED", val: "03 [1 COIN, 1 EMP, 1 SMOKE]", color: "#38BDF8" },
-      { label: "ELAPSED INFIL TIME", val: "02:41.8", color: "#F1F5F9" }
-    ];
-
-    stats.forEach((st, idx) => {
-      const sy = cy + 96 + idx * 26;
-      ctx.font = "bold 9px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
-      ctx.fillText(st.label, cx + 32, sy);
-
-      ctx.font = "bold 11px 'Courier New', monospace";
-      ctx.fillStyle = st.color;
-      ctx.fillText(st.val, cx + 240, sy);
-    });
-
-    // Right Column: 3-Floor Progression Cards
-    const cards = [
-      {
-        floor: "CONTRACT 01",
-        title: "THE LUMINARY GALLERY",
-        loot: "STAR OF ALEXANDRIA",
-        status: "COMPLETED 100%",
-        color: "#00F0FF"
-      },
-      {
-        floor: "CONTRACT 02",
-        title: "THE OBSIDIAN MAINFRAME",
-        loot: "QUANTUM CRYPTO CIPHER",
-        status: "COMPLETED 100%",
-        color: "#38BDF8"
-      },
-      {
-        floor: "CONTRACT 03",
-        title: "THE SOVEREIGN SANCTUM",
-        loot: "MASTER TITANIUM SAFE",
-        status: "COMPLETED 100%",
-        color: "#F59E0B"
-      }
-    ];
-
-    cards.forEach((cd, idx) => {
-      const cardY = cy + 86 + idx * 72;
-      const cardX = cx + 520;
-      const cardW = 360;
-      const cardH = 62;
-
-      ctx.fillStyle = "rgba(15, 23, 42, 0.80)";
-      ctx.fillRect(cardX, cardY, cardW, cardH);
-      ctx.strokeStyle = cd.color;
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(cardX, cardY, cardW, cardH);
-
-      ctx.font = "bold 9px 'Courier New', monospace";
-      ctx.fillStyle = cd.color;
-      ctx.fillText(`[ ${cd.floor} // ${cd.status} ]`, cardX + 12, cardY + 18);
-
-      ctx.font = "bold 11px 'Courier New', monospace";
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillText(cd.title, cardX + 12, cardY + 36);
-
-      ctx.font = "9px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
-      ctx.fillText(`TARGET: ${cd.loot}`, cardX + 12, cardY + 52);
-    });
-
-    // Footer Action Prompt
-    ctx.font = "bold 10px 'Courier New', monospace";
-    ctx.fillStyle = "#00F0FF";
-    ctx.fillText("PRESS [SPACE] TO REDEPLOY OPERATIVE  //  PRESS [R] TO REPLAY FROM FLOOR 1", cx + 24, cy + ch - 18);
-
-    ctx.restore();
+    this.debriefModal.render(ctx, this.time);
   }
 }

@@ -8,6 +8,7 @@ import { HEIST_LEVELS } from './world/levels.js';
 import { GameRenderer } from './engine/renderer.js';
 import { LightingEngine } from './engine/lighting.js';
 import { ProceduralAudioEngine } from './engine/audio.js';
+import { ParticleEngine } from './engine/particles.js';
 import { ThiefController } from './gameplay/thiefController.js';
 import { GuardFSM } from './ai/guardFSM.js';
 import { CameraSystem } from './ai/cameraSystem.js';
@@ -26,6 +27,7 @@ export class VelvetGame {
     // Subsystems
     this.renderer = new GameRenderer(canvas);
     this.lighting = new LightingEngine(this.width, this.height);
+    this.particles = new ParticleEngine();
     this.audio = new ProceduralAudioEngine();
     this.alarmSystem = new AlarmSystem();
     this.gadgetManager = new GadgetManager();
@@ -193,6 +195,7 @@ export class VelvetGame {
     // 6. Update Global Systems
     this.alarmSystem.update(dt, this.audio);
     this.lighting.update(dt);
+    this.particles.update(dt);
     this.renderer.update(dt);
     this.audio.update(dt);
   }
@@ -212,70 +215,76 @@ export class VelvetGame {
     // 1. Clear & Blueprint Grid
     this.renderer.clear();
 
-    // 2. Room Floor Tile Styling & Blueprint Labels
+    // 2. Room Floor Tile Styling, Carpets, Conduits, Artworks & Blueprint Labels
     this.renderer.renderRooms(this.level);
 
     // 3. Footstep Trails
     this.lighting.renderFootsteps(this.ctx, this.thief.footsteps);
 
-    // 4. Furniture & Consoles
+    // 4. Atmospheric Spotlight Pools & Ambient Illumination
+    this.lighting.renderAtmosphericLighting(this.ctx, this.level, this.thief);
+
+    // 5. Furniture & 2.5D Architectural Props
     this.renderer.renderFurniture(this.level.furniture);
 
-    // 5. Terminals & Extraction
+    // 6. Terminals & Extraction
     this.renderer.renderTerminals(this.level.terminals, this.thief);
     this.renderer.renderExtraction(this.level.extraction, this.thief.hasLoot);
 
-    // 6. Glowing Loot Target
+    // 7. Glowing Loot Target
     this.renderer.renderLoot(this.level.loot, this.thief.hasLoot);
 
-    // 7. Laser Grids
+    // 8. Laser Grids with floor bounce and emitter boxes
     for (let laser of this.level.lasers) {
       this.lighting.renderLaserBeam(this.ctx, laser);
     }
 
-    // 8. Volumetric Guard Vision Cones with furniture obstacle shadow casting
+    // 9. Volumetric Guard Vision Cones with furniture obstacle shadow casting & lens flare
     for (let guard of this.guards) {
       this.lighting.renderGuardCone(this.ctx, guard, this.level.walls, this.gadgetManager.smokeClouds, this.level.furniture);
     }
 
-    // 9. Volumetric Camera Beams & Scanlines with furniture obstacle shadow casting
+    // 10. Volumetric Camera Beams & Scanlines with furniture obstacle shadow casting
     for (let cam of this.cameraSystem.cameras) {
       this.lighting.renderCameraCone(this.ctx, cam, this.level.walls, this.gadgetManager.smokeClouds, this.level.furniture);
     }
 
-    // 10. Smoke Clouds & Gadget Effects
-    this.lighting.renderSmokeClouds(this.ctx, this.gadgetManager.smokeClouds);
-    this.lighting.renderSoundRipples(this.ctx, this.gadgetManager.soundRipples);
+    // 11. Multi-Layered Particles: Dust Motes, Swirling Smoke Veil, EMP Lightning Arcs & Sound Waves
+    this.particles.renderDustMotes(this.ctx);
+    this.particles.renderSmokeClouds(this.ctx, this.gadgetManager.smokeClouds, this.renderer.time);
+    this.particles.renderEMPEffects(this.ctx, this.gadgetManager.empFlashes, this.cameraSystem.cameras);
+    this.particles.renderSoundRipples(this.ctx, this.gadgetManager.soundRipples);
     this.gadgetManager.render(this.ctx);
 
-    // 11. Security Cameras & Guards Bodies
+    // 12. Security Cameras & Armored Guards Bodies
     this.renderer.renderCameras(this.cameraSystem.cameras);
     this.renderer.renderGuards(this.guards);
 
-    // 12. Thief Operative Top-Down Silhouette
+    // 13. Articulated Thief Operative with Glowing Loot Satchel
     this.renderer.renderThief(this.thief, this.inputState.mouse.x, this.inputState.mouse.y);
 
-    // 13. Walls (Thick Filled Slate with Architectural Blueprint Lines)
+    // 14. 2.5D Architectural Walls (Lit south facades, dark caps, drop shadows)
     this.renderer.renderWalls(this.level.walls);
 
-    // 14. Emergency Strobe Light Overlay if LOCKDOWN
+    // 15. Emergency Strobe Light Overlay if LOCKDOWN
     if (this.alarmSystem.state === "LOCKDOWN") {
       const alpha = 0.08 + 0.07 * Math.sin(this.alarmSystem.strobe);
       this.ctx.fillStyle = `rgba(255, 0, 40, ${alpha})`;
       this.ctx.fillRect(0, 0, this.width, this.height);
     }
 
-    // 15. Diegetic Tactical HUD (Mission, Objectives, Gadget Bar, Bold Alarm Meter)
+    // 16. Studio Obsidian Glass HUD (Valuation counter, segmented alarm meter, vector gadget icons & radar minimap)
     this.hud.render(
       this.ctx,
       this.level,
       this.thief,
       this.alarmSystem,
       this.gadgetManager,
-      this.audio
+      this.audio,
+      this.guards
     );
 
-    // 16. Tactical Debrief Scorecard Overlay (for Shot 4 or Victory)
+    // 17. Tactical Debrief Scorecard Overlay (for Shot 4 or Victory)
     if (this.showDebriefOverlay) {
       this.renderer.renderDebriefScorecard(this.ctx);
     }
