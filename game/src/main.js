@@ -1,6 +1,7 @@
 /**
- * main.js - Velvet Circuit Master Entrypoint & Simulation Loop (v2.0.0)
+ * main.js - Velvet Circuit Master Entrypoint & Simulation Loop (v5.0.0)
  * Coordinates rendering, audio, guards, cameras, gadgets, and input handling.
+ * Features 1.65x cinematic tactical follow-camera, live minimap, and diegetic hack ring.
  * Native 1280x480 tactical widescreen resolution for desktop Chrome.
  */
 
@@ -9,6 +10,7 @@ import { GameRenderer } from './engine/renderer.js';
 import { LightingEngine } from './engine/lighting.js';
 import { ProceduralAudioEngine } from './engine/audio.js';
 import { ParticleEngine } from './engine/particles.js';
+import { TacticalCamera } from './engine/camera.js';
 import { ThiefController } from './gameplay/thiefController.js';
 import { GuardFSM } from './ai/guardFSM.js';
 import { CameraSystem } from './ai/cameraSystem.js';
@@ -32,6 +34,7 @@ export class VelvetGame {
     this.alarmSystem = new AlarmSystem();
     this.gadgetManager = new GadgetManager();
     this.hud = new GameHUD(this.width, this.height);
+    this.camera = new TacticalCamera(this.width, this.height);
 
     // Game State
     this.currentFloorIndex = 0;
@@ -39,6 +42,12 @@ export class VelvetGame {
     this.thief = new ThiefController();
     this.guards = [];
     this.cameraSystem = null;
+
+    // Hack Minigame Ring state
+    this.hackRingActive = false;
+    this.hackRingProgress = 0;
+    this.hackRingLabel = "BYPASS CIPHER";
+    this.hackRingTarget = null;
 
     // Input Tracking
     this.inputState = {
@@ -63,20 +72,24 @@ export class VelvetGame {
     this.thief.reset(this.level.thiefStart.x, this.level.thiefStart.y, this.level.thiefStart.facing);
 
     // Initialize Guards
-    this.guards = this.level.guards.map(g => new GuardFSM(g));
+    this.guards = this.level.guards.map(cfg => new GuardFSM(cfg));
 
-    // Initialize Cameras
+    // Initialize Camera System
     this.cameraSystem = new CameraSystem(this.level.cameras);
 
-    // Reset Alarm System for new floor
-    this.alarmSystem = new AlarmSystem();
-    this.showDebriefOverlay = false;
+    // Reset Alarm System
+    this.alarmSystem.reset();
+
+    // Center camera on thief start
+    this.camera.setFocus(this.thief.x, this.thief.y, true);
+
+    this.audio.playFloorAmbience(this.currentFloorIndex);
   }
 
   bindEvents() {
     window.addEventListener('keydown', (e) => {
-      this.inputState.keys[e.code] = true;
       this.audio.ensureContext();
+      this.inputState.keys[e.code] = true;
 
       // Number keys for gadget selection
       if (e.code === 'Digit1') this.gadgetManager.select(1);
@@ -103,8 +116,11 @@ export class VelvetGame {
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.width / rect.width;
       const scaleY = this.height / rect.height;
-      this.inputState.mouse.x = (e.clientX - rect.left) * scaleX;
-      this.inputState.mouse.y = (e.clientY - rect.top) * scaleY;
+      const screenX = (e.clientX - rect.left) * scaleX;
+      const screenY = (e.clientY - rect.top) * scaleY;
+      const worldM = this.camera ? this.camera.screenToWorld(screenX, screenY) : { x: screenX, y: screenY };
+      this.inputState.mouse.x = worldM.x;
+      this.inputState.mouse.y = worldM.y;
     });
 
     this.canvas.addEventListener('mousedown', (e) => {
@@ -179,7 +195,7 @@ export class VelvetGame {
       this.level.furniture
     );
 
-    // 5. Update Guards FSM with furniture occlusion
+    // 5. Update Guards with furniture occlusion
     for (let guard of this.guards) {
       guard.update(
         dt,
@@ -192,12 +208,16 @@ export class VelvetGame {
       );
     }
 
-    // 6. Update Global Systems
-    this.alarmSystem.update(dt, this.audio);
+    // 6. Update Subsystems
+    this.alarmSystem.update(dt);
     this.lighting.update(dt);
     this.particles.update(dt);
     this.renderer.update(dt);
+    this.hud.update(dt);
     this.audio.update(dt);
+
+    // 7. Update Tactical Follow-Camera
+    this.camera.update(this.thief.x, this.thief.y, dt, { minX: 40, maxX: 1240, minY: 44, maxY: 448 });
   }
 
   onFloorCleared() {
@@ -212,11 +232,58 @@ export class VelvetGame {
   }
 
   render() {
-    // 1. Clear & Blueprint Grid
+    // 1. Clear Viewport
     this.renderer.clear();
 
-    // 2. Room Floor Tile Styling, Carpets, Conduits, Artworks & Blueprint Labels
+    // Split-Screen Debrief Mode (Shot 4 / Victory)
+    if (this.showDebriefOverlay) {
+      // Left 52% (x: 0..665) renders the live world extraction view
+      this.ctx.save();
+      this.ctx.beginPath();
+      this.ctx.rect(0, 0, 665, this.height);
+      this.ctx.clip();
+
+      this.camera.applySplit(this.ctx, 665);
+      this.renderWorld();
+      this.camera.restore(this.ctx);
+      this.ctx.restore();
+
+      // Right 48% (x: 665..1280) renders the studio Debrief Scorecard
+      this.renderer.renderDebriefScorecardSplit(this.ctx, this.level, this.thief);
+
+      // Dividing Seam
+      this.ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.moveTo(665, 0);
+      this.ctx.lineTo(665, this.height);
+      this.ctx.stroke();
+      return;
+    }
+
+    // Standard Gameplay Viewport: 1.65x Zoom Tactical Follow-Camera
+    this.camera.apply(this.ctx);
+    this.renderWorld();
+    this.camera.restore(this.ctx);
+
+    // Screen-space HUD & full Tactical Minimap
+    this.hud.render(
+      this.ctx,
+      this.level,
+      this.thief,
+      this.alarmSystem,
+      this.gadgetManager,
+      this.audio,
+      this.guards
+    );
+  }
+
+  renderWorld() {
+    // 1. Room Floor Tile Styling, Carpets, Conduits, Artworks & Blueprint Labels
     this.renderer.renderRooms(this.level);
+
+    // 2. Security Circuit Conduits
+    this.renderer.renderConduits(this.level);
 
     // 3. Footstep Trails
     this.lighting.renderFootsteps(this.ctx, this.thief.footsteps);
@@ -263,30 +330,22 @@ export class VelvetGame {
     // 13. Articulated Thief Operative with Glowing Loot Satchel
     this.renderer.renderThief(this.thief, this.inputState.mouse.x, this.inputState.mouse.y);
 
-    // 14. 2.5D Architectural Walls (Lit south facades, dark caps, drop shadows)
-    this.renderer.renderWalls(this.level.walls);
+    // 14. Interactive Circular Hack / Lockpick Minigame Ring
+    if (this.hackRingActive || (this.thief.interacting && this.thief.interactProgress > 0)) {
+      const hx = this.hackRingTarget ? this.hackRingTarget.x : this.thief.x;
+      const hy = this.hackRingTarget ? this.hackRingTarget.y : this.thief.y;
+      const prog = this.hackRingProgress || this.thief.interactProgress || 0.68;
+      this.renderer.renderHackRing(hx, hy, prog, this.hackRingLabel || "BYPASS CIPHER");
+    }
 
-    // 15. Emergency Strobe Light Overlay if LOCKDOWN
+    // 15. Themed 2.5D Architectural Walls (Lit south facades, dark caps, drop shadows)
+    this.renderer.renderWalls(this.level.walls, this.level);
+
+    // 16. Emergency Strobe Light Overlay if LOCKDOWN
     if (this.alarmSystem.state === "LOCKDOWN") {
       const alpha = 0.08 + 0.07 * Math.sin(this.alarmSystem.strobe);
       this.ctx.fillStyle = `rgba(255, 0, 40, ${alpha})`;
       this.ctx.fillRect(0, 0, this.width, this.height);
-    }
-
-    // 16. Studio Obsidian Glass HUD (Valuation counter, segmented alarm meter, vector gadget icons & radar minimap)
-    this.hud.render(
-      this.ctx,
-      this.level,
-      this.thief,
-      this.alarmSystem,
-      this.gadgetManager,
-      this.audio,
-      this.guards
-    );
-
-    // 17. Tactical Debrief Scorecard Overlay (for Shot 4 or Victory)
-    if (this.showDebriefOverlay) {
-      this.renderer.renderDebriefScorecard(this.ctx);
     }
   }
 

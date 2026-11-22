@@ -40,7 +40,7 @@ export const LEVEL_1_GALLERY = {
     { name: "RECEPTION FOYER", x: 44, y: 280, w: 236, h: 164, tag: "R-01" },
     { name: "CLASSICAL WING", x: 44, y: 48, w: 316, h: 224, tag: "R-02" },
     { name: "CENTRAL ROTUNDA", x: 368, y: 48, w: 472, h: 396, tag: "R-03" },
-    { name: "SECURITY ANTECHAMBER", x: 848, y: 48, w: 264, h: 172, tag: "R-04" },
+    { name: "ANTECHAMBER", x: 848, y: 48, w: 264, h: 172, tag: "R-04" },
     { name: "VIP GEM VAULT", x: 848, y: 228, w: 264, h: 216, tag: "R-05" },
     { name: "EXFIL", x: 1120, y: 48, w: 116, h: 396, tag: "R-06" }
   ],
@@ -119,6 +119,19 @@ export const LEVEL_1_GALLERY = {
       type: "laser_override",
       hacked: false,
       hackTime: 1.2
+    }
+  ],
+  powerConduits: [
+    {
+      id: "C1",
+      label: "FEED // L-01",
+      color: "#00F0FF",
+      glowColor: "rgba(0, 240, 255, 0.28)",
+      points: [
+        { x: 940, y: 88 },
+        { x: 940, y: 145 },
+        { x: 844, y: 145 }
+      ]
     }
   ],
   cameras: [
@@ -287,6 +300,20 @@ export const LEVEL_2_SERVER_VAULT = {
       type: "door_release",
       hacked: false,
       hackTime: 1.5
+    }
+  ],
+  powerConduits: [
+    {
+      id: "C2",
+      label: "FEED // CAM-02",
+      color: "#38BDF8",
+      glowColor: "rgba(56, 189, 248, 0.28)",
+      points: [
+        { x: 590, y: 190 },
+        { x: 440, y: 190 },
+        { x: 440, y: 150 },
+        { x: 260, y: 150 }
+      ]
     }
   ],
   cameras: [
@@ -479,6 +506,20 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
       type: "laser_override",
       hacked: false,
       hackTime: 1.8
+    }
+  ],
+  powerConduits: [
+    {
+      id: "C3",
+      label: "FEED // TITANIUM-INTERLOCK",
+      color: "#F59E0B",
+      glowColor: "rgba(245, 158, 11, 0.28)",
+      points: [
+        { x: 810, y: 104 },
+        { x: 910, y: 104 },
+        { x: 910, y: 240 },
+        { x: 955, y: 240 }
+      ]
     }
   ],
   cameras: [

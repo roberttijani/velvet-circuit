@@ -42,11 +42,11 @@ export class GameHUD {
     ctx.stroke();
 
     // 2. Top-Left: Mission & Sector Blueprint Header
-    ctx.font = "bold 11px 'Courier New', monospace";
+    ctx.font = "bold 11px system-ui, -apple-system, sans-serif";
     ctx.fillStyle = "#00F0FF";
     ctx.fillText(`VELVET CIRCUIT // ${level.name}`, 14, 16);
 
-    ctx.font = "8.5px 'Courier New', monospace";
+    ctx.font = "bold 8px system-ui, sans-serif";
     ctx.fillStyle = "rgba(148, 163, 184, 0.90)";
     ctx.fillText(`${level.subtitle} [${level.blueprintCode}]`, 14, 30);
 
@@ -85,11 +85,11 @@ export class GameHUD {
     ctx.lineWidth = 1;
     ctx.strokeRect(vx, vy, vw, vh);
 
-    ctx.font = "bold 7px 'Courier New', monospace";
+    ctx.font = "bold 7px system-ui, sans-serif";
     ctx.fillStyle = thief.hasLoot ? "#10B981" : "#94A3B8";
     ctx.fillText(thief.hasLoot ? "[ LOOT SECURED ]" : "[ TARGET VALUATION ]", vx + 8, vy + 9.5);
 
-    ctx.font = "bold 10px 'Courier New', monospace";
+    ctx.font = "bold 11px system-ui, -apple-system, sans-serif";
     ctx.fillStyle = "#F59E0B";
     const valText = level.lootValue || "$62,500,000";
     ctx.fillText(valText, vx + 8, vy + 20.5);
@@ -103,7 +103,7 @@ export class GameHUD {
     const startY = 19;
 
     // Alarm State Badge
-    ctx.font = "bold 10px 'Courier New', monospace";
+    ctx.font = "bold 9.5px system-ui, -apple-system, sans-serif";
     const stateColor = alarmSystem.getColor();
     ctx.fillStyle = stateColor;
     const stateLabel = `SECURITY THREAT: [ ${alarmSystem.state} ]`;
@@ -138,7 +138,7 @@ export class GameHUD {
     }
 
     // Recent Security Feed Message inside sleek compact dark pill capsule
-    ctx.font = "bold 7.5px 'Courier New', monospace";
+    ctx.font = "bold 7.5px system-ui, sans-serif";
     ctx.fillStyle = alarmSystem.state === "LOCKDOWN" ? "#FF003C" : "rgba(226, 232, 240, 0.90)";
     const msg = `LOG: ${alarmSystem.lastAlertMessage}`;
     const msgW = ctx.measureText(msg).width;
@@ -190,12 +190,12 @@ export class GameHUD {
       this.renderGadgetIcon(ctx, gx + 13, y + 14, g.type, isSelected);
 
       // Label
-      ctx.font = "bold 8px 'Courier New', monospace";
+      ctx.font = "bold 8px system-ui, sans-serif";
       ctx.fillStyle = isSelected ? "#00F0FF" : "#94A3B8";
       ctx.fillText(`[${g.key}] ${g.name}`, gx + 25, y + 13);
 
       // Count
-      ctx.font = "bold 8.5px 'Courier New', monospace";
+      ctx.font = "bold 8.5px system-ui, sans-serif";
       ctx.fillStyle = g.count > 0 ? "#10B981" : "#EF4444";
       ctx.fillText(`x${g.count}`, gx + 25, y + 23);
     });
@@ -269,11 +269,12 @@ export class GameHUD {
     ctx.stroke();
 
     // Stance Indicator
-    ctx.font = "bold 9px 'Courier New', monospace";
+    ctx.font = "bold 9px system-ui, -apple-system, sans-serif";
     ctx.fillStyle = thief.isSneaking ? "#10B981" : "#00F0FF";
     ctx.fillText(`STANCE: ${thief.isSneaking ? "SNEAK [SILENT]" : "NORMAL [TACTICAL]"}`, 14, by + 15);
 
     // Objective Status
+    ctx.font = "bold 9px system-ui, sans-serif";
     ctx.fillStyle = thief.hasLoot ? "#10B981" : "#F59E0B";
     const objText = thief.hasLoot
       ? "OBJECTIVE: LOOT SECURED >> ESCAPE TO EXFIL CHUTE <<"
@@ -281,6 +282,7 @@ export class GameHUD {
     ctx.fillText(objText, 250, by + 15);
 
     // Controls hint
+    ctx.font = "8px system-ui, sans-serif";
     ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
     ctx.fillText("WASD Move | SHIFT Sneak | SPACE/E Hack & Grab | 1-3 Gadgets | CLICK Deploy | [M] Audio", 710, by + 15);
   }

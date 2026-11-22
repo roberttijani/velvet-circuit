@@ -35,44 +35,59 @@ export class LightingEngine {
       const lx = level.loot.x;
       const ly = level.loot.y;
       const pulse = 0.85 + 0.15 * Math.sin(this.time * 3);
-      const spotGrad = ctx.createRadialGradient(lx, ly, 8, lx, ly, 110 * pulse);
-      spotGrad.addColorStop(0, "rgba(251, 191, 36, 0.32)");
-      spotGrad.addColorStop(0.5, "rgba(245, 158, 11, 0.14)");
+      const spotGrad = ctx.createRadialGradient(lx, ly, 8, lx, ly, 125 * pulse);
+      spotGrad.addColorStop(0, "rgba(251, 191, 36, 0.42)");
+      spotGrad.addColorStop(0.35, "rgba(245, 158, 11, 0.22)");
+      spotGrad.addColorStop(0.7, "rgba(217, 119, 6, 0.08)");
       spotGrad.addColorStop(1, "rgba(245, 158, 11, 0)");
 
       ctx.fillStyle = spotGrad;
       ctx.beginPath();
-      ctx.arc(lx, ly, 110 * pulse, 0, Math.PI * 2);
+      ctx.arc(lx, ly, 125 * pulse, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // 2. Warm spotlights over museum vitrines / boardroom table
+    // 2. Warm spotlights over museum vitrines / boardroom table / terminals
     if (level.furniture) {
       for (let f of level.furniture) {
         if (f.type === "vitrine" || (f.type === "desk" && f.label && f.label.includes("BOARD"))) {
           const fx = f.x + f.w * 0.5;
           const fy = f.y + f.h * 0.5;
-          const grad = ctx.createRadialGradient(fx, fy, 4, fx, fy, Math.max(f.w, f.h) * 0.85);
-          grad.addColorStop(0, "rgba(254, 240, 138, 0.22)");
-          grad.addColorStop(0.7, "rgba(245, 158, 11, 0.06)");
+          const grad = ctx.createRadialGradient(fx, fy, 4, fx, fy, Math.max(f.w, f.h) * 0.9);
+          grad.addColorStop(0, "rgba(254, 240, 138, 0.28)");
+          grad.addColorStop(0.6, "rgba(245, 158, 11, 0.10)");
           grad.addColorStop(1, "rgba(245, 158, 11, 0)");
 
           ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(fx, fy, Math.max(f.w, f.h) * 0.85, 0, Math.PI * 2);
+          ctx.arc(fx, fy, Math.max(f.w, f.h) * 0.9, 0, Math.PI * 2);
           ctx.fill();
         }
       }
     }
 
-    // 3. Cool cyan ambient glow around thief operative
-    const tg = ctx.createRadialGradient(thief.x, thief.y, 4, thief.x, thief.y, 75);
-    tg.addColorStop(0, "rgba(0, 240, 255, 0.16)");
-    tg.addColorStop(0.7, "rgba(0, 160, 255, 0.05)");
+    // 3. Hack Terminals ambient glow
+    if (level.terminals) {
+      for (let term of level.terminals) {
+        const tgrad = ctx.createRadialGradient(term.x, term.y, 2, term.x, term.y, 42);
+        tgrad.addColorStop(0, term.hacked ? "rgba(16, 185, 129, 0.35)" : "rgba(0, 240, 255, 0.28)");
+        tgrad.addColorStop(0.7, term.hacked ? "rgba(16, 185, 129, 0.08)" : "rgba(0, 240, 255, 0.06)");
+        tgrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = tgrad;
+        ctx.beginPath();
+        ctx.arc(term.x, term.y, 42, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 4. Cool cyan ambient glow around thief operative
+    const tg = ctx.createRadialGradient(thief.x, thief.y, 4, thief.x, thief.y, 80);
+    tg.addColorStop(0, "rgba(0, 240, 255, 0.20)");
+    tg.addColorStop(0.6, "rgba(0, 160, 255, 0.08)");
     tg.addColorStop(1, "rgba(0, 100, 255, 0)");
     ctx.fillStyle = tg;
     ctx.beginPath();
-    ctx.arc(thief.x, thief.y, 75, 0, Math.PI * 2);
+    ctx.arc(thief.x, thief.y, 80, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();

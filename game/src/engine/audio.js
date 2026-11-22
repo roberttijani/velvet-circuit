@@ -298,6 +298,11 @@ export class ProceduralAudioEngine {
     osc.stop(now + 0.32);
   }
 
+  playFloorAmbience(floorIndex) {
+    // Optional floor ambient drone tone
+    if (!this.ctx || this.isMuted) return;
+  }
+
   toggleMute() {
     this.isMuted = !this.isMuted;
     if (this.masterGain && this.ctx) {

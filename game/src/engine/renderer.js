@@ -12,6 +12,8 @@
 import { TextureManager } from './textures.js';
 import { WorldPropsRenderer } from '../world/props.js';
 import { MissionDebriefModal } from '../ui/debrief.js';
+import { PowerConduitSystem } from '../world/conduits.js';
+import { HackMinigameRing } from '../ui/hackRing.js';
 
 export class GameRenderer {
   constructor(canvas) {
@@ -25,12 +27,24 @@ export class GameRenderer {
     this.textures = new TextureManager();
     this.props = new WorldPropsRenderer();
     this.debriefModal = new MissionDebriefModal(this.width, this.height);
+    this.conduits = new PowerConduitSystem();
+    this.hackRing = new HackMinigameRing();
 
     this.textures.init(this.ctx);
   }
 
   update(dt) {
     this.time += dt;
+    this.conduits.update(dt);
+    this.hackRing.update(dt);
+  }
+
+  renderConduits(level) {
+    this.conduits.render(this.ctx, level);
+  }
+
+  renderHackRing(x, y, progress, label) {
+    this.hackRing.render(this.ctx, x, y, progress, label);
   }
 
   /**
@@ -77,6 +91,9 @@ export class GameRenderer {
   renderRooms(level) {
     const ctx = this.ctx;
 
+    const floorType = level ? level.floorType : "gallery";
+    const badgeColor = floorType === "server" ? "#F59E0B" : (floorType === "penthouse" ? "#E5A93C" : "#D4AF37");
+
     for (let room of level.rooms) {
       ctx.save();
 
@@ -92,63 +109,88 @@ export class GameRenderer {
         ctx.fillRect(room.x, room.y, room.w, room.h);
       }
 
-      // Room perimeter blueprint accent
-      ctx.strokeStyle = "rgba(0, 240, 255, 0.18)";
+      // Room perimeter architectural accent
+      ctx.strokeStyle = floorType === "server" ? "rgba(245, 158, 11, 0.18)" : (floorType === "penthouse" ? "rgba(229, 169, 60, 0.22)" : "rgba(212, 175, 55, 0.20)");
       ctx.lineWidth = 1;
       ctx.strokeRect(room.x + 1, room.y + 1, room.w - 2, room.h - 2);
 
-      // 2. Velvet Carpet Runners
-      if (level.carpetRunners) {
-        for (let c of level.carpetRunners) {
-          this.textures.renderCarpetRunner(ctx, c);
-        }
-      }
-
-      // 3. Glowing Fiber Conduits
-      if (level.conduits) {
-        for (let cd of level.conduits) {
-          this.textures.renderFiberConduit(ctx, cd, this.time);
-        }
-      }
-
-      // 4. Fine Art Wall Paintings
-      if (level.artworks) {
-        this.props.renderWallArtworks(ctx, level.artworks);
-      }
-
-      // 5. Titanium Vault Door
-      if (level.vaultDoor) {
-        this.props.renderTitaniumVaultDoor(ctx, level.vaultDoor.x, level.vaultDoor.y, level.vaultDoor.radius, this.time);
-      }
-
-      // 6. Diegetic Room Title Badge (Safe non-overlapping coordinates)
+      // 2. Diegetic Room Title Badge (Safe non-overlapping coordinates)
       const badgeText = `[ ${room.tag} // ${room.name} ]`;
-      ctx.font = "bold 9px 'Courier New', monospace";
+      ctx.font = "bold 8.5px system-ui, -apple-system, sans-serif";
       const bw = ctx.measureText(badgeText).width + 12;
 
-      ctx.fillStyle = "rgba(7, 12, 22, 0.90)";
+      ctx.fillStyle = "rgba(7, 12, 22, 0.92)";
       ctx.fillRect(room.x + 8, room.y + 8, bw, 14);
-      ctx.strokeStyle = "rgba(0, 240, 255, 0.45)";
+      ctx.strokeStyle = badgeColor;
       ctx.lineWidth = 1;
       ctx.strokeRect(room.x + 8, room.y + 8, bw, 14);
 
-      ctx.fillStyle = "#00F0FF";
-      ctx.fillText(badgeText, room.x + 14, room.y + 18);
+      ctx.fillStyle = badgeColor;
+      ctx.fillText(badgeText, room.x + 14, room.y + 18.5);
 
       ctx.restore();
+    }
+
+    // 3. Velvet Carpet Runners
+    if (level.carpetRunners) {
+      for (let c of level.carpetRunners) {
+        this.textures.renderCarpetRunner(ctx, c);
+      }
+    }
+
+    // 4. Glowing Fiber Conduits
+    if (level.conduits) {
+      for (let cd of level.conduits) {
+        this.textures.renderFiberConduit(ctx, cd, this.time);
+      }
+    }
+
+    // 5. Fine Art Wall Paintings
+    if (level.artworks) {
+      this.props.renderWallArtworks(ctx, level.artworks);
+    }
+
+    // 6. Titanium Vault Door
+    if (level.vaultDoor) {
+      this.props.renderTitaniumVaultDoor(ctx, level.vaultDoor.x, level.vaultDoor.y, level.vaultDoor.radius, this.time);
     }
   }
 
   /**
    * Renders 2.5D architectural walls with south-facing vertical facades and drop shadows.
    */
-  renderWalls(walls) {
+  renderWalls(walls, level) {
     const ctx = this.ctx;
     ctx.save();
 
-    // 1. Soft Wall Floor Drop-Shadow onto adjacent floors
-    ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
-    ctx.lineWidth = 14;
+    const floorType = level ? level.floorType : "gallery";
+
+    let facadeFill = "#161820";
+    let facadeSeam = "#222530";
+    let trimColor = "#D4AF37"; // Floor 1: warm gold
+    let wallCapCore = "#0E1015";
+    let wallCapBevel = "#1A1D24";
+    let shadowAlpha = 0.75;
+
+    if (floorType === "server") {
+      facadeFill = "#141923";
+      facadeSeam = "#1E2636";
+      trimColor = "#F59E0B"; // Floor 2: amber hazard
+      wallCapCore = "#0A0D14";
+      wallCapBevel = "#18202E";
+      shadowAlpha = 0.80;
+    } else if (floorType === "penthouse") {
+      facadeFill = "#15131A";
+      facadeSeam = "#241F2C";
+      trimColor = "#E5A93C"; // Floor 3: brass / syndicate gold
+      wallCapCore = "#0C0A10";
+      wallCapBevel = "#1C1724";
+      shadowAlpha = 0.85;
+    }
+
+    // 1. Deep Soft Wall Floor Drop-Shadow onto adjacent floors
+    ctx.strokeStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+    ctx.lineWidth = 16;
     ctx.lineCap = "square";
     ctx.beginPath();
     for (let w of walls) {
@@ -165,11 +207,11 @@ export class GameRenderer {
         const wallWidth = right - left;
 
         // Vertical Wall Drop (8px height)
-        ctx.fillStyle = "#121E2E";
+        ctx.fillStyle = facadeFill;
         ctx.fillRect(left, w.y1, wallWidth, 8);
 
         // Vertical architectural joint seams
-        ctx.strokeStyle = "#1A2A3D";
+        ctx.strokeStyle = facadeSeam;
         ctx.lineWidth = 1;
         for (let jx = left + 28; jx < right - 12; jx += 28) {
           ctx.beginPath();
@@ -178,8 +220,8 @@ export class GameRenderer {
           ctx.stroke();
         }
 
-        // Cyan Baseboard Floor Trim
-        ctx.strokeStyle = "#38BDF8";
+        // Themed Architectural Baseboard Floor Trim
+        ctx.strokeStyle = trimColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(left, w.y1 + 8);
@@ -188,9 +230,9 @@ export class GameRenderer {
       }
     }
 
-    // 3. Thick Dark Slate Architectural Wall Cap
-    ctx.strokeStyle = "#0B1522";
-    ctx.lineWidth = 10;
+    // 3. Thick Dark Solid Architectural Wall Cap
+    ctx.strokeStyle = wallCapCore;
+    ctx.lineWidth = 11;
     ctx.beginPath();
     for (let w of walls) {
       ctx.moveTo(w.x1, w.y1);
@@ -198,9 +240,9 @@ export class GameRenderer {
     }
     ctx.stroke();
 
-    // 4. Inner Slate Bevel Edge
-    ctx.strokeStyle = "#1E293B";
-    ctx.lineWidth = 6;
+    // 4. Inner Bevel Edge
+    ctx.strokeStyle = wallCapBevel;
+    ctx.lineWidth = 7;
     ctx.beginPath();
     for (let w of walls) {
       ctx.moveTo(w.x1, w.y1);
@@ -208,8 +250,8 @@ export class GameRenderer {
     }
     ctx.stroke();
 
-    // 5. Sharp Cyan Architectural Blueprint Centerline
-    ctx.strokeStyle = "#00F0FF";
+    // 5. Crisp Themed Architectural Trim Accent (warm gold / amber / brass)
+    ctx.strokeStyle = trimColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let w of walls) {
@@ -427,7 +469,7 @@ export class GameRenderer {
 
     // Centered status badge inside extraction bounds
     const tag = isUnlocked ? ">> EXFIL READY <<" : "[ LOCKED: GET LOOT ]";
-    ctx.font = "bold 8px 'Courier New', monospace";
+    ctx.font = "bold 8px system-ui, -apple-system, sans-serif";
     const tw = ctx.measureText(tag).width;
     ctx.fillStyle = color;
     ctx.fillText(tag, exfil.x + (exfil.w - tw) * 0.5, exfil.y + exfil.h * 0.5 + 3);
@@ -454,7 +496,7 @@ export class GameRenderer {
 
       // Dynamic Pill Tag cleanly below console
       const tagText = term.hacked ? "[ OVERRIDDEN ]" : `[E] ${term.label}`;
-      ctx.font = "bold 8px 'Courier New', monospace";
+      ctx.font = "bold 8px system-ui, -apple-system, sans-serif";
       const pw = ctx.measureText(tagText).width + 18;
       const pillX = term.x - pw * 0.5;
       ctx.fillStyle = "rgba(7, 12, 22, 0.90)";
@@ -631,15 +673,52 @@ export class GameRenderer {
       ctx.save();
       ctx.translate(g.x, g.y);
 
-      // Alert marker badge
-      if (g.state === "ALERT") {
-        ctx.fillStyle = "#FF003C";
-        ctx.font = "bold 13px 'Courier New', monospace";
-        ctx.fillText("(!)", -10, -18);
-      } else if (g.state === "INVESTIGATING" || g.state === "SUSPICIOUS") {
-        ctx.fillStyle = "#F59E0B";
-        ctx.font = "bold 13px 'Courier New', monospace";
-        ctx.fillText("(?)", -10, -18);
+      // Tactical Radio Speech Callout
+      if (g.radioCallout) {
+        const text = g.radioCallout;
+        const bubbleCol = g.state === "ALERT" ? "#FF003C" : (g.state === "INVESTIGATING" ? "#F59E0B" : "#10B981");
+
+        ctx.font = "bold 8px system-ui, -apple-system, sans-serif";
+        const tw = ctx.measureText(text).width + 16;
+        const bx = -tw * 0.5;
+        const by = -38;
+        const bh = 15;
+
+        // Dark glass bubble
+        ctx.fillStyle = "rgba(7, 12, 22, 0.95)";
+        ctx.fillRect(bx, by, tw, bh);
+        ctx.strokeStyle = bubbleCol;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, tw, bh);
+
+        // Speech pointer triangle
+        ctx.fillStyle = "rgba(7, 12, 22, 0.95)";
+        ctx.beginPath();
+        ctx.moveTo(-3, by + bh);
+        ctx.lineTo(3, by + bh);
+        ctx.lineTo(0, by + bh + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = bubbleCol;
+        ctx.beginPath();
+        ctx.moveTo(-3, by + bh);
+        ctx.lineTo(0, by + bh + 4);
+        ctx.lineTo(3, by + bh);
+        ctx.stroke();
+
+        ctx.fillStyle = bubbleCol;
+        ctx.fillText(text, bx + 8, by + 10.5);
+      } else {
+        // Subtle alert marker badge if no full radio bubble
+        if (g.state === "ALERT") {
+          ctx.fillStyle = "#FF003C";
+          ctx.font = "bold 13px system-ui, sans-serif";
+          ctx.fillText("(!)", -10, -18);
+        } else if (g.state === "INVESTIGATING" || g.state === "SUSPICIOUS") {
+          ctx.fillStyle = "#F59E0B";
+          ctx.font = "bold 13px system-ui, sans-serif";
+          ctx.fillText("(?)", -10, -18);
+        }
       }
 
       ctx.rotate(g.facing);
@@ -686,5 +765,12 @@ export class GameRenderer {
    */
   renderDebriefScorecard(ctx) {
     this.debriefModal.render(ctx, this.time);
+  }
+
+  /**
+   * Renders split-screen debrief scorecard (for Shot 4 and victory screen).
+   */
+  renderDebriefScorecardSplit(ctx, level, thief) {
+    this.debriefModal.renderSplit(ctx, level, thief, this.time);
   }
 }

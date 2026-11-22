@@ -12,6 +12,14 @@ export class AlarmSystem {
     this.strobe = 0;
   }
 
+  reset() {
+    this.level = 0;
+    this.state = "GHOST";
+    this.lastAlertMessage = "SECTOR SECURE // ZERO DETECTION";
+    this.alertTimer = 0;
+    this.strobe = 0;
+  }
+
   update(dt, audioEngine) {
     // Alarm decay over time if not in line of sight
     const decayRate = this.state === "LOCKDOWN" ? 1.5 : (this.state === "SUSPICIOUS" ? 3.5 : 5.0);
