@@ -1,8 +1,17 @@
 /**
- * raycast.js - 2D Raycasting, Visibility Polygon & Dynamic Shadow Engine
+ * raycast.js - 2D Raycasting, Visibility Polygon & Dynamic Shadow Engine (v3)
  * Calculates ray-segment intersections, occlusion from walls and furniture obstacles,
- * and builds smooth visibility polygons for guard flashlights, cameras, and shadows.
+ * with strict relative-angle sorting to eliminate FOV winding artifacts and stray cone triangles.
  */
+
+/**
+ * Normalizes an angle into [-PI, +PI].
+ */
+export function normalizeAngle(angle) {
+  let a = (angle + Math.PI) % (Math.PI * 2);
+  if (a < 0) a += Math.PI * 2;
+  return a - Math.PI;
+}
 
 /**
  * Computes intersection between ray (p1->p2) and segment (p3->p4).
@@ -41,7 +50,6 @@ export function getFurnitureOccluderSegments(furnitureList = []) {
   const segments = [];
   for (let i = 0; i < furnitureList.length; i++) {
     const item = furnitureList[i];
-    // All solid physical obstacles cast shadows
     if (
       item.type === 'column' ||
       item.type === 'plinth' ||
@@ -69,7 +77,6 @@ export function getFurnitureOccluderSegments(furnitureList = []) {
  * Occluded by wall segments, solid furniture obstacles, or dense smoke clouds.
  */
 export function hasLineOfSight(x1, y1, x2, y2, wallSegments, smokeClouds = [], furnitureSegments = []) {
-  // 1. Check architectural walls
   for (let i = 0; i < wallSegments.length; i++) {
     const s = wallSegments[i];
     const hit = getLineIntersection(x1, y1, x2, y2, s.x1, s.y1, s.x2, s.y2);
@@ -78,7 +85,6 @@ export function hasLineOfSight(x1, y1, x2, y2, wallSegments, smokeClouds = [], f
     }
   }
 
-  // 2. Check solid furniture obstacles
   for (let i = 0; i < furnitureSegments.length; i++) {
     const s = furnitureSegments[i];
     const hit = getLineIntersection(x1, y1, x2, y2, s.x1, s.y1, s.x2, s.y2);
@@ -87,7 +93,6 @@ export function hasLineOfSight(x1, y1, x2, y2, wallSegments, smokeClouds = [], f
     }
   }
 
-  // 3. Check smoke clouds (dense circular occluders)
   for (let i = 0; i < smokeClouds.length; i++) {
     const sc = smokeClouds[i];
     if (!sc.active || sc.radius <= 0) continue;
@@ -113,7 +118,7 @@ export function distToSegment(px, py, x1, y1, x2, y2) {
 
 /**
  * Builds a 2D visibility polygon from origin (ox, oy) within a max radius and optional FOV cone.
- * Combines walls and furniture occluders, solving endpoint collinearity issues.
+ * Strictly sorts by relative angle delta in [-halfFov, +halfFov] to eliminate self-intersecting slivers.
  */
 export function buildVisibilityPolygon(
   ox,
@@ -125,7 +130,6 @@ export function buildVisibilityPolygon(
   smokeClouds = [],
   furnitureSegments = []
 ) {
-  // Combine all occluding geometry
   const allSegments = furnitureSegments.length > 0
     ? wallSegments.concat(furnitureSegments)
     : wallSegments;
@@ -133,15 +137,17 @@ export function buildVisibilityPolygon(
   const hasFOV = facingAngle !== null && fovAngle !== null;
   const halfFov = hasFOV ? fovAngle * 0.5 : Math.PI;
 
-  const rawAngles = [];
+  const candidateDeltas = [];
 
-  // Add boundary cone limit angles if FOV is constrained
   if (hasFOV) {
-    rawAngles.push(facingAngle - halfFov);
-    rawAngles.push(facingAngle + halfFov);
+    candidateDeltas.push(-halfFov);
+    candidateDeltas.push(halfFov);
+  } else {
+    candidateDeltas.push(-Math.PI);
+    candidateDeltas.push(Math.PI);
   }
 
-  // Collect candidate angles from segment endpoints
+  // Collect candidate angles from endpoints within FOV
   for (let i = 0; i < allSegments.length; i++) {
     const s = allSegments[i];
     const pts = [{ x: s.x1, y: s.y1 }, { x: s.x2, y: s.y2 }];
@@ -150,57 +156,55 @@ export function buildVisibilityPolygon(
       const dy = pts[p].y - oy;
       const dist = Math.hypot(dx, dy);
       if (dist > maxRadius * 1.45 || dist < 1.0) continue;
+
       const baseAngle = Math.atan2(dy, dx);
+      const delta = hasFOV ? normalizeAngle(baseAngle - facingAngle) : normalizeAngle(baseAngle);
 
-      if (hasFOV) {
-        let diff = (baseAngle - facingAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
-        if (Math.abs(diff) > halfFov + 0.05) continue;
+      if (delta >= -halfFov && delta <= halfFov) {
+        candidateDeltas.push(delta);
+        if (delta - 0.0001 >= -halfFov) candidateDeltas.push(delta - 0.0001);
+        if (delta + 0.0001 <= halfFov) candidateDeltas.push(delta + 0.0001);
       }
-
-      // Slightly offset rays to detect corners cleanly without bleeding through edges
-      rawAngles.push(baseAngle - 0.0002);
-      rawAngles.push(baseAngle);
-      rawAngles.push(baseAngle + 0.0002);
     }
   }
 
-  // Uniform sampling for smooth circular perimeter
+  // Uniform sampling across FOV
   const sampleSteps = hasFOV ? 24 : 48;
-  const minA = hasFOV ? facingAngle - halfFov : -Math.PI;
-  const maxA = hasFOV ? facingAngle + halfFov : Math.PI;
+  const minD = -halfFov;
+  const maxD = halfFov;
   for (let s = 0; s <= sampleSteps; s++) {
-    rawAngles.push(minA + (maxA - minA) * (s / sampleSteps));
+    candidateDeltas.push(minD + (maxD - minD) * (s / sampleSteps));
   }
 
-  // Normalize and cast rays
-  const rays = [];
-  for (let i = 0; i < rawAngles.length; i++) {
-    let a = rawAngles[i];
-    if (hasFOV) {
-      let diff = (a - facingAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
-      if (diff < -halfFov) a = facingAngle - halfFov;
-      if (diff > halfFov) a = facingAngle + halfFov;
-    }
+  // Unique deltas sorted ascending
+  candidateDeltas.sort((a, b) => a - b);
 
-    const cosA = Math.cos(a);
-    const sinA = Math.sin(a);
+  const rays = [];
+  for (let i = 0; i < candidateDeltas.length; i++) {
+    const delta = candidateDeltas[i];
+    // Filter duplicates
+    if (i > 0 && Math.abs(delta - candidateDeltas[i - 1]) < 1e-7) continue;
+
+    const angle = hasFOV ? (facingAngle + delta) : delta;
+    const cosA = Math.cos(angle);
+    const sinA = Math.sin(angle);
     const targetX = ox + cosA * maxRadius;
     const targetY = oy + sinA * maxRadius;
 
-    let closestHit = { x: targetX, y: targetY, dist: maxRadius, angle: a };
+    let closestHit = { x: targetX, y: targetY, dist: maxRadius, delta: delta, angle: angle };
 
     for (let j = 0; j < allSegments.length; j++) {
       const s = allSegments[j];
       const hit = getLineIntersection(ox, oy, targetX, targetY, s.x1, s.y1, s.x2, s.y2);
-      if (hit) {
+      if (hit && hit.t > 0.005) {
         const d = hit.t * maxRadius;
         if (d < closestHit.dist) {
-          closestHit = { x: hit.x, y: hit.y, dist: d, angle: a };
+          closestHit = { x: hit.x, y: hit.y, dist: d, delta: delta, angle: angle };
         }
       }
     }
 
-    // Clip against dense smoke clouds
+    // Clip against smoke clouds
     for (let k = 0; k < smokeClouds.length; k++) {
       const sc = smokeClouds[k];
       if (!sc.active || sc.radius <= 0) continue;
@@ -216,7 +220,8 @@ export function buildVisibilityPolygon(
               x: ox + cosA * entryDist,
               y: oy + sinA * entryDist,
               dist: entryDist,
-              angle: a
+              delta: delta,
+              angle: angle
             };
           }
         }
@@ -226,14 +231,12 @@ export function buildVisibilityPolygon(
     rays.push(closestHit);
   }
 
-  // Sort rays by relative angle using standard angle difference
+  // Sort rays strictly by relative angle delta ascending
   rays.sort((r1, r2) => {
-    let a1 = hasFOV ? ((r1.angle - facingAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI) : r1.angle;
-    let a2 = hasFOV ? ((r2.angle - facingAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI) : r2.angle;
-    if (Math.abs(a1 - a2) < 1e-7) {
+    if (Math.abs(r1.delta - r2.delta) < 1e-7) {
       return r1.dist - r2.dist;
     }
-    return a1 - a2;
+    return r1.delta - r2.delta;
   });
 
   return rays;

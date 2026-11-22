@@ -264,15 +264,18 @@ export class GameRenderer {
       ctx.strokeRect(loot.x - 20, loot.y - 20, 40, 40);
 
       // Pill tag
+      const pillText = "[ LOOT SECURED ]";
+      ctx.font = "bold 8px 'Courier New', monospace";
+      const pw = ctx.measureText(pillText).width + 20;
+      const pillX = loot.x - pw * 0.5;
       ctx.fillStyle = "rgba(7, 12, 22, 0.9)";
-      ctx.fillRect(loot.x - 38, loot.y + 24, 76, 15);
+      ctx.fillRect(pillX, loot.y + 24, pw, 15);
       ctx.strokeStyle = "#10B981";
       ctx.lineWidth = 1;
-      ctx.strokeRect(loot.x - 38, loot.y + 24, 76, 15);
+      ctx.strokeRect(pillX, loot.y + 24, pw, 15);
 
-      ctx.font = "bold 8px 'Courier New', monospace";
       ctx.fillStyle = "#10B981";
-      ctx.fillText("[ LOOT SECURED ]", loot.x - 34, loot.y + 35);
+      ctx.fillText(pillText, pillX + 10, loot.y + 35);
       ctx.restore();
       return;
     }
@@ -352,18 +355,19 @@ export class GameRenderer {
       ctx.restore();
     }
 
-    // Compact loot badge pill cleanly below pedestal
-    const pillText = `[E] SECURE ${loot.name.slice(0, 18)}`;
+    // Dynamic loot badge pill cleanly below pedestal
+    const pillText = `[E] SECURE ${loot.name}`;
     ctx.font = "bold 8px 'Courier New', monospace";
-    const pw = ctx.measureText(pillText).width + 12;
+    const pw = ctx.measureText(pillText).width + 20;
+    const pillX = loot.x - pw * 0.5;
     ctx.fillStyle = "rgba(7, 12, 22, 0.92)";
-    ctx.fillRect(loot.x - pw * 0.5, loot.y + 24, pw, 15);
+    ctx.fillRect(pillX, loot.y + 24, pw, 15);
     ctx.strokeStyle = loot.glowColor;
     ctx.lineWidth = 1;
-    ctx.strokeRect(loot.x - pw * 0.5, loot.y + 24, pw, 15);
+    ctx.strokeRect(pillX, loot.y + 24, pw, 15);
 
     ctx.fillStyle = "#FFFFFF";
-    ctx.fillText(pillText, loot.x - pw * 0.5 + 6, loot.y + 35);
+    ctx.fillText(pillText, pillX + 10, loot.y + 35);
 
     ctx.restore();
   }
@@ -411,18 +415,19 @@ export class GameRenderer {
       ctx.fillStyle = term.hacked ? "#10B981" : "#00F0FF";
       ctx.fillRect(term.x - 8, term.y - 8, 16, 16);
 
-      // Compact Pill Tag cleanly below console
+      // Dynamic Pill Tag cleanly below console
       const tagText = term.hacked ? "[ OVERRIDDEN ]" : `[E] ${term.label}`;
       ctx.font = "bold 8px 'Courier New', monospace";
-      const pw = ctx.measureText(tagText).width + 10;
+      const pw = ctx.measureText(tagText).width + 18;
+      const pillX = term.x - pw * 0.5;
       ctx.fillStyle = "rgba(7, 12, 22, 0.90)";
-      ctx.fillRect(term.x - pw * 0.5, term.y + 16, pw, 14);
+      ctx.fillRect(pillX, term.y + 16, pw, 14);
       ctx.strokeStyle = term.hacked ? "#10B981" : "#00F0FF";
       ctx.lineWidth = 1;
-      ctx.strokeRect(term.x - pw * 0.5, term.y + 16, pw, 14);
+      ctx.strokeRect(pillX, term.y + 16, pw, 14);
 
       ctx.fillStyle = term.hacked ? "#10B981" : "#FFFFFF";
-      ctx.fillText(tagText, term.x - pw * 0.5 + 5, term.y + 26);
+      ctx.fillText(tagText, pillX + 9, term.y + 26);
 
       const dist = Math.hypot(thief.x - term.x, thief.y - term.y);
       if (dist < 45 && !term.hacked) {

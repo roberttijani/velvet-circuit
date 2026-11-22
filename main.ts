@@ -10,7 +10,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-game.ts';
 
-const VELVET_CIRCUIT_RELEASE = '1.0.0';
+const VELVET_CIRCUIT_RELEASE = '1.1.0';
 
 function runVelvetCircuitPipeline(): void {
   const baseDir = fileURLToPath(new URL('.', import.meta.url));

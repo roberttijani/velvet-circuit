@@ -54,6 +54,13 @@ Every gameplay frame unmistakably showcases:
 - **Diegetic Foley SFX**: Tactile bootsteps, metallic coin clinks, EMP power discharges, smoke hissing, computer terminal hacking sequences, and alarm sirens.
 - **Zero External Audio Assets**: 100% synthesized in-memory with zero network requests.
 
+### 6. Precision Polish & Visual Clarity (v3 Updates)
+- **Dynamic Interaction Pills**: All `[E]` interaction badges (terminals, overrides, and multi-word loot targets) dynamically compute exact pixel pill dimensions with safe margins, ensuring labels like `[E] SECURE THE STAR OF ALEXANDRIA` and `[E] SECURE QUANTUM CRYPTO CIPHER` never truncate.
+- **Strict FOV Relative Angle Sorting**: Visibility polygon generator calculates relative angle delta in `[-halfFov, +halfFov]`, completely eliminating collinear edge artifacts and stray cone slivers across complex multi-room doorways.
+- **Prominent Wall Surveillance Optics**: Recalibrated wall-mounted camera housings with volumetric cyan scanline beams sweeping unobstructed across active exhibition halls.
+- **Precision Element Composition**: Calibrated EMP shockwaves and decoy coin acoustic ripples centered cleanly within navigable corridor nodes without clipping architectural borders or room titles.
+- **Mission Debrief S-Rank Tactical Scorecard**: End-of-heist debrief interface displaying mission analytics, valuations, stealth performance, and multi-floor contract progression.
+
 ---
 
 ## Clean Modular Architecture

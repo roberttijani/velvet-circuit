@@ -35,7 +35,12 @@ export function stageScreenshotScenario(sceneName, worldState) {
 
     // Camera pointing across rotunda with cyan scanlines
     if (worldState.cameraSystem.cameras[0]) {
-      worldState.cameraSystem.cameras[0].currentAngle = Math.PI * 0.45;
+      worldState.cameraSystem.cameras[0].currentAngle = Math.PI * 0.38;
+      worldState.cameraSystem.cameras[0].disabledTimer = 0;
+    }
+    if (worldState.cameraSystem.cameras[1]) {
+      worldState.cameraSystem.cameras[1].currentAngle = -Math.PI * 0.70;
+      worldState.cameraSystem.cameras[1].disabledTimer = 0;
     }
 
     // Vault laser barrier active
@@ -62,21 +67,29 @@ export function stageScreenshotScenario(sceneName, worldState) {
     // Guard investigating decoy coin
     if (worldState.guards[0]) {
       worldState.guards[0].x = 510;
-      worldState.guards[0].y = 135;
+      worldState.guards[0].y = 145;
       worldState.guards[0].facing = -Math.PI * 0.85;
       worldState.guards[0].state = "INVESTIGATING";
-      worldState.guards[0].investigateTarget = { x: 430, y: 90 };
+      worldState.guards[0].investigateTarget = { x: 440, y: 115 };
+    }
+
+    // Lower guard in S-04 facing upward/left into the open room
+    if (worldState.guards[2]) {
+      worldState.guards[2].x = 810;
+      worldState.guards[2].y = 260;
+      worldState.guards[2].facing = -Math.PI * 0.70;
+      worldState.guards[2].state = "PATROL";
     }
 
     // Active sound ripple from decoy coin
     worldState.gadgetManager.soundRipples = [
-      { x: 430, y: 90, radius: 85, maxRadius: 220, alpha: 0.85, speed: 0, active: true },
-      { x: 430, y: 90, radius: 45, maxRadius: 220, alpha: 0.95, speed: 0, active: true }
+      { x: 440, y: 115, radius: 70, maxRadius: 180, alpha: 0.85, speed: 0, active: true },
+      { x: 440, y: 115, radius: 36, maxRadius: 180, alpha: 0.95, speed: 0, active: true }
     ];
 
-    // EMP flash shockwave disabling camera
+    // EMP flash shockwave disabling camera (fully inside map, arcing over CAM_2A)
     worldState.gadgetManager.empFlashes = [
-      { x: 244, y: 50, radius: 88, maxRadius: 240, alpha: 0.90 }
+      { x: 252, y: 150, radius: 60, maxRadius: 180, alpha: 0.92 }
     ];
     if (worldState.cameraSystem.cameras[0]) {
       worldState.cameraSystem.cameras[0].disabledTimer = 4.5;
