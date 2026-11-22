@@ -1,6 +1,7 @@
 /**
- * main.js - Velvet Circuit Master Entrypoint & Simulation Loop
+ * main.js - Velvet Circuit Master Entrypoint & Simulation Loop (v1.0.0)
  * Coordinates rendering, audio, guards, cameras, gadgets, and input handling.
+ * Native 1280x480 tactical widescreen resolution for desktop Chrome.
  */
 
 import { HEIST_LEVELS } from './world/levels.js';

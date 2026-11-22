@@ -2,3 +2,5 @@ out/
 out_test*/
 test_out/
 *.log
+transcripts.tar.gz
+capture_shots.py

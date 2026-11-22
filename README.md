@@ -117,6 +117,7 @@ node serve.ts --port 8080
 
 ### 2. Generate Output & Dossier
 ```bash
+# Writes /output with byte-identical determinism
 node main.ts
 ```
 
