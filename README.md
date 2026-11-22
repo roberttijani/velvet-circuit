@@ -4,7 +4,7 @@
 [![make.fun rank](https://make.fun/badge/best-heist-game-20261122-0559/roberttijani/velvet-circuit/rank.svg)](https://make.fun/c/best-heist-game-20261122-0559)
 [![make.fun reward](https://make.fun/badge/best-heist-game-20261122-0559/roberttijani/velvet-circuit/reward.svg)](https://make.fun/c/best-heist-game-20261122-0559)
 
-> **VELVET CIRCUIT** is an original, deeply playable offline HTML5 Canvas tactical heist game designed for desktop keyboard and mouse at native 1280x480 tactical widescreen. Built for the **make.fun** bounty (`best-heist-game-20261122-0559`).
+> **VELVET CIRCUIT** is an original, deeply playable offline HTML5 Canvas tactical heist game designed for desktop keyboard and mouse at native 1280x480 tactical widescreen. Built for the make.fun bounty: [best-heist-game-20261122-0559](https://make.fun/bounty/best-heist-game-20261122-0559).
 
 ---
 
