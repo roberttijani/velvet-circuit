@@ -137,12 +137,32 @@ export class GameHUD {
       }
     }
 
-    // Recent Security Feed Message
-    ctx.font = "7.5px 'Courier New', monospace";
-    ctx.fillStyle = alarmSystem.state === "LOCKDOWN" ? "#FF003C" : "rgba(226, 232, 240, 0.75)";
+    // Recent Security Feed Message inside sleek compact dark pill capsule
+    ctx.font = "bold 7.5px 'Courier New', monospace";
+    ctx.fillStyle = alarmSystem.state === "LOCKDOWN" ? "#FF003C" : "rgba(226, 232, 240, 0.90)";
     const msg = `LOG: ${alarmSystem.lastAlertMessage}`;
     const msgW = ctx.measureText(msg).width;
-    ctx.fillText(msg, cx - msgW * 0.5, 49);
+    const pillW = msgW + 16;
+    const pillH = 13;
+    const pillX = cx - pillW * 0.5;
+    const pillY = 36;
+
+    // Dark pill background masking top wall border
+    ctx.fillStyle = "rgba(10, 16, 26, 0.95)";
+    ctx.strokeStyle = alarmSystem.state === "LOCKDOWN" ? "rgba(255, 0, 60, 0.8)" : "rgba(56, 189, 248, 0.45)";
+    ctx.lineWidth = 1;
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(pillX, pillY, pillW, pillH, 6);
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.fillRect(pillX, pillY, pillW, pillH);
+      ctx.strokeRect(pillX, pillY, pillW, pillH);
+    }
+
+    ctx.fillStyle = alarmSystem.state === "LOCKDOWN" ? "#FF003C" : "rgba(226, 232, 240, 0.90)";
+    ctx.fillText(msg, cx - msgW * 0.5, pillY + 9.5);
   }
 
   renderGadgetBar(ctx, gadgetManager) {

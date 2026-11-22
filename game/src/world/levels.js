@@ -376,7 +376,7 @@ export const LEVEL_2_SERVER_VAULT = {
 export const LEVEL_3_PENTHOUSE_SAFE = {
   id: 3,
   name: "THE SOVEREIGN SANCTUM",
-  subtitle: "PENTHOUSE LEVEL 88 // EXECUTIVE SAFE",
+  subtitle: "PENTHOUSE LVL 88 //",
   blueprintCode: "BLPR-SEC03-SANCTUM",
   floorType: "penthouse",
   lootValue: "$62,500,000",

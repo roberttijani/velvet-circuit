@@ -2,7 +2,7 @@
  * debrief.js - Tactical Mission Debrief & Contract Progression Scorecard (v4)
  * Renders the studio-grade glassmorphism post-mission debrief screen:
  * - Handcrafted vector S-Rank Operative Crest
- * - Heist target valuation ($62,500,000) & stealth analytics
+ * - Total haul valuation ($287,500,000) & stealth analytics
  * - 3 Progressive contract cards with completion badges and target icons
  */
 
@@ -60,7 +60,7 @@ export class MissionDebriefModal {
     // 5. Left Column: Heist Analytics & Performance Metrics
     const lx = cx + 24;
     const stats = [
-      { label: "TARGET VALUATION", val: "$62,500,000", col: "#F59E0B", bold: true },
+      { label: "TOTAL HAUL VALUATION", val: "$287,500,000", col: "#F59E0B", bold: true },
       { label: "DETECTIONS LOGGED", val: "00 [GHOST RATING]", col: "#00F0FF" },
       { label: "ALARM LOCKDOWNS", val: "00 [CLEAN INFIL]", col: "#10B981" },
       { label: "GADGETS DEPLOYED", val: "03 [1 COIN, 1 EMP, 1 SMOKE]", col: "#38BDF8" },

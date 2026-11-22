@@ -168,7 +168,7 @@ export class ParticleEngine {
       ctx.fill();
     }
 
-    // 4. Floating diegetic countdown timer over EMP-disabled security cameras
+    // 4. Floating diegetic countdown timer over EMP-disabled security cameras (offset below camera)
     for (let cam of disabledCameras) {
       if (cam.disabledTimer > 0) {
         const timeSec = cam.disabledTimer.toFixed(1);
@@ -177,9 +177,9 @@ export class ParticleEngine {
         const tw = ctx.measureText(tagText).width + 12;
 
         const bx = cam.x - tw * 0.5;
-        const by = cam.y - 18;
+        const by = cam.y + 18; // offset 18px BELOW the disabled camera
 
-        ctx.fillStyle = "rgba(7, 12, 22, 0.92)";
+        ctx.fillStyle = "rgba(7, 12, 22, 0.96)";
         ctx.fillRect(bx, by, tw, 13);
         ctx.strokeStyle = "#00F0FF";
         ctx.lineWidth = 1;

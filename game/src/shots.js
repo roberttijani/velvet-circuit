@@ -11,18 +11,18 @@ export function stageScreenshotScenario(sceneName, worldState) {
   if (sceneName === '01-gallery-stealth' || sceneName === 'start') {
     // Floor 1: Hero stealth frame with all 5 mandatory elements
     worldState.loadFloor(0);
-    // Position thief sneaking behind Corinthian column (casts realistic shadow)
-    worldState.thief.x = 430;
-    worldState.thief.y = 155;
+    // Position thief sneaking behind Corinthian column cover outside camera & guard cones
+    worldState.thief.x = 405;
+    worldState.thief.y = 165;
     worldState.thief.facing = 0.2;
     worldState.thief.isSneaking = true;
     worldState.alarmSystem.forceState("GHOST", 8);
 
-    // Guard 1 in Rotunda with volumetric cone sweeping across plinths
+    // Guard 1 in Rotunda sweeping southwest across plinths and vitrine
     if (worldState.guards[0]) {
       worldState.guards[0].x = 640;
       worldState.guards[0].y = 160;
-      worldState.guards[0].facing = Math.PI * 0.95;
+      worldState.guards[0].facing = Math.PI * 0.78;
       worldState.guards[0].state = "PATROL";
     }
     // Guard 2 in Classical Wing
@@ -33,9 +33,9 @@ export function stageScreenshotScenario(sceneName, worldState) {
       worldState.guards[1].state = "PATROL";
     }
 
-    // Camera pointing across rotunda with cyan scanlines
+    // Camera pointing south-southeast across rotunda with cyan scanlines
     if (worldState.cameraSystem.cameras[0]) {
-      worldState.cameraSystem.cameras[0].currentAngle = Math.PI * 0.38;
+      worldState.cameraSystem.cameras[0].currentAngle = Math.PI * 0.58;
       worldState.cameraSystem.cameras[0].disabledTimer = 0;
     }
     if (worldState.cameraSystem.cameras[1]) {
@@ -51,9 +51,9 @@ export function stageScreenshotScenario(sceneName, worldState) {
 
     // Footstep breadcrumb trail
     worldState.thief.footsteps = [
-      { x: 390, y: 155, facing: 0, alpha: 0.8 },
-      { x: 350, y: 155, facing: 0, alpha: 0.6 },
-      { x: 310, y: 155, facing: 0, alpha: 0.4 }
+      { x: 375, y: 165, facing: 0, alpha: 0.8 },
+      { x: 345, y: 165, facing: 0, alpha: 0.6 },
+      { x: 315, y: 165, facing: 0, alpha: 0.4 }
     ];
   } else if (sceneName === '02-gadget-distraction' || sceneName === 'gadget') {
     // Floor 2: Gadget / EMP and Decoy distraction

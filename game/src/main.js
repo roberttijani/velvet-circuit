@@ -251,10 +251,10 @@ export class VelvetGame {
 
     // 11. Multi-Layered Particles: Dust Motes, Swirling Smoke Veil, EMP Lightning Arcs & Sound Waves
     this.particles.renderDustMotes(this.ctx);
+    this.gadgetManager.render(this.ctx);
     this.particles.renderSmokeClouds(this.ctx, this.gadgetManager.smokeClouds, this.renderer.time);
     this.particles.renderEMPEffects(this.ctx, this.gadgetManager.empFlashes, this.cameraSystem.cameras);
     this.particles.renderSoundRipples(this.ctx, this.gadgetManager.soundRipples);
-    this.gadgetManager.render(this.ctx);
 
     // 12. Security Cameras & Armored Guards Bodies
     this.renderer.renderCameras(this.cameraSystem.cameras);
