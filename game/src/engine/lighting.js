@@ -1,19 +1,15 @@
 /**
- * lighting.js - Dynamic 2D Lighting, Volumetric Cones, Scanlines & Shadow Engine
- * Implements high-contrast Tactical Noir Blueprint visual aesthetics.
+ * lighting.js - Dynamic 2D Lighting, Volumetric Cones, Scanlines & Shadow Engine (v2)
+ * Features dynamic obstacle occlusion from pillars and server racks, volumetric gradients,
+ * moving digital scanlines, and coherent pulsing laser beams.
  */
 
-import { buildVisibilityPolygon } from '../world/raycast.js';
+import { buildVisibilityPolygon, getFurnitureOccluderSegments } from '../world/raycast.js';
 
 export class LightingEngine {
   constructor(width, height) {
     this.width = width;
     this.height = height;
-    // Offscreen canvas for lighting mask
-    this.lightCanvas = document.createElement('canvas');
-    this.lightCanvas.width = width;
-    this.lightCanvas.height = height;
-    this.lightCtx = this.lightCanvas.getContext('2d');
     this.scanlineOffset = 0;
   }
 
@@ -22,9 +18,10 @@ export class LightingEngine {
   }
 
   /**
-   * Renders the volumetric vision cone for a guard using raycast polygon.
+   * Renders the volumetric vision cone for a guard, occluded by walls AND furniture obstacles.
    */
-  renderGuardCone(ctx, guard, wallSegments, smokeClouds) {
+  renderGuardCone(ctx, guard, wallSegments, smokeClouds, furnitureList = []) {
+    const furnitureSegments = getFurnitureOccluderSegments(furnitureList);
     const rays = buildVisibilityPolygon(
       guard.x,
       guard.y,
@@ -32,7 +29,8 @@ export class LightingEngine {
       wallSegments,
       guard.facing,
       guard.fov,
-      smokeClouds
+      smokeClouds,
+      furnitureSegments
     );
 
     if (rays.length < 2) return;
@@ -48,22 +46,22 @@ export class LightingEngine {
     // Determine colors based on guard alert state
     let innerColor, outerColor, edgeColor;
     if (guard.state === "ALERT") {
-      innerColor = "rgba(255, 30, 60, 0.50)";
+      innerColor = "rgba(255, 30, 60, 0.48)";
       outerColor = "rgba(255, 0, 30, 0.05)";
-      edgeColor = "rgba(255, 50, 70, 0.85)";
+      edgeColor = "rgba(255, 60, 80, 0.90)";
     } else if (guard.state === "INVESTIGATING" || guard.state === "SUSPICIOUS") {
-      innerColor = "rgba(255, 180, 0, 0.40)";
+      innerColor = "rgba(255, 180, 0, 0.42)";
       outerColor = "rgba(255, 120, 0, 0.04)";
-      edgeColor = "rgba(255, 200, 40, 0.80)";
+      edgeColor = "rgba(255, 200, 40, 0.85)";
     } else {
-      // Normal patrol
-      innerColor = "rgba(180, 230, 255, 0.28)";
-      outerColor = "rgba(0, 140, 255, 0.02)";
-      edgeColor = "rgba(100, 200, 255, 0.60)";
+      // Normal patrol: volumetric tactical amber/yellow-white
+      innerColor = "rgba(255, 225, 150, 0.32)";
+      outerColor = "rgba(255, 200, 100, 0.03)";
+      edgeColor = "rgba(255, 220, 130, 0.65)";
     }
 
     const grad = ctx.createRadialGradient(
-      guard.x, guard.y, 10,
+      guard.x, guard.y, 8,
       guard.x, guard.y, guard.viewDist
     );
     grad.addColorStop(0, innerColor);
@@ -73,32 +71,44 @@ export class LightingEngine {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Outer perimeter edge glow
+    // Perimeter edge highlight
     ctx.strokeStyle = edgeColor;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
     ctx.restore();
   }
 
   /**
-   * Renders sweeping security camera cone with volumetric beam and moving digital scanlines.
+   * Renders sweeping security camera cone with volumetric beam, scanlines, and obstacle shadows.
    */
-  renderCameraCone(ctx, cam, wallSegments, smokeClouds) {
+  renderCameraCone(ctx, cam, wallSegments, smokeClouds, furnitureList = []) {
     if (cam.disabledTimer > 0) {
-      // Render disabled flickering electric spark
+      // Disabled electric glitch state
       ctx.save();
-      ctx.strokeStyle = "rgba(0, 240, 255, 0.8)";
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.75)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.arc(cam.x, cam.y, 8, 0, Math.PI * 2);
+      ctx.arc(cam.x, cam.y, 9, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.fillStyle = "rgba(0, 240, 255, 0.3)";
+      ctx.fillStyle = "rgba(0, 240, 255, 0.25)";
       ctx.fill();
+
+      // Sparks
+      for (let s = 0; s < 3; s++) {
+        const a = Math.random() * Math.PI * 2;
+        const d = 8 + Math.random() * 12;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(cam.x, cam.y);
+        ctx.lineTo(cam.x + Math.cos(a) * d, cam.y + Math.sin(a) * d);
+        ctx.stroke();
+      }
       ctx.restore();
       return;
     }
 
+    const furnitureSegments = getFurnitureOccluderSegments(furnitureList);
     const rays = buildVisibilityPolygon(
       cam.x,
       cam.y,
@@ -106,7 +116,8 @@ export class LightingEngine {
       wallSegments,
       cam.currentAngle,
       cam.fov,
-      smokeClouds
+      smokeClouds,
+      furnitureSegments
     );
 
     if (rays.length < 2) return;
@@ -119,19 +130,20 @@ export class LightingEngine {
     }
     ctx.closePath();
 
-    // Camera volumetric gradient
+    const isTripped = cam.alerted;
     const grad = ctx.createRadialGradient(
-      cam.x, cam.y, 5,
+      cam.x, cam.y, 6,
       cam.x, cam.y, cam.range
     );
-    const isTripped = cam.alerted;
+
     if (isTripped) {
       grad.addColorStop(0, "rgba(255, 0, 60, 0.55)");
-      grad.addColorStop(0.8, "rgba(255, 0, 60, 0.12)");
+      grad.addColorStop(0.75, "rgba(255, 0, 60, 0.10)");
       grad.addColorStop(1, "rgba(255, 0, 60, 0)");
     } else {
-      grad.addColorStop(0, "rgba(0, 240, 255, 0.35)");
-      grad.addColorStop(0.8, "rgba(0, 160, 255, 0.08)");
+      // Sweeping cyan surveillance beam
+      grad.addColorStop(0, "rgba(0, 240, 255, 0.38)");
+      grad.addColorStop(0.75, "rgba(0, 160, 255, 0.08)");
       grad.addColorStop(1, "rgba(0, 100, 255, 0)");
     }
 
@@ -139,12 +151,12 @@ export class LightingEngine {
     ctx.fill();
 
     ctx.strokeStyle = isTripped ? "rgba(255, 30, 60, 0.9)" : "rgba(0, 240, 255, 0.75)";
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Moving digital scanlines inside the clipped polygon
+    // Moving digital raster scanlines
     ctx.clip();
-    ctx.strokeStyle = isTripped ? "rgba(255, 50, 80, 0.22)" : "rgba(0, 255, 255, 0.18)";
+    ctx.strokeStyle = isTripped ? "rgba(255, 60, 90, 0.22)" : "rgba(0, 255, 255, 0.18)";
     ctx.lineWidth = 1;
     for (let y = 0; y < this.height; y += 6) {
       const lineY = (y + this.scanlineOffset) % this.height;
@@ -158,26 +170,26 @@ export class LightingEngine {
   }
 
   /**
-   * Renders glowing laser grid barrier with bloom and ambient particle reflections.
+   * Renders glowing coherent laser grid beam with bloom and emitter nodes.
    */
   renderLaserBeam(ctx, laser) {
     if (!laser.active || laser.disabledTimer > 0) return;
 
     ctx.save();
-    // Laser outer glow
+    // Laser outer bloom
     ctx.strokeStyle = "rgba(255, 0, 60, 0.35)";
-    ctx.lineWidth = 7;
+    ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.moveTo(laser.x1, laser.y1);
     ctx.lineTo(laser.x2, laser.y2);
     ctx.stroke();
 
-    // Laser core beam
-    ctx.strokeStyle = "#FF3366";
+    // Core laser glow
+    ctx.strokeStyle = "#FF003C";
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Laser intense center white thread
+    // Intense center core thread
     ctx.strokeStyle = "#FFFFFF";
     ctx.lineWidth = 1;
     ctx.stroke();
@@ -199,18 +211,17 @@ export class LightingEngine {
     ctx.save();
     for (let r of ripples) {
       if (!r.active || r.alpha <= 0) continue;
-      ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha * 0.75})`;
-      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${r.alpha * 0.85})`;
+      ctx.lineWidth = 2.0;
       ctx.beginPath();
       ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Second outer faint ring
-      if (r.radius > 15) {
-        ctx.strokeStyle = `rgba(0, 240, 255, ${r.alpha * 0.4})`;
-        ctx.lineWidth = 1.0;
+      if (r.radius > 16) {
+        ctx.strokeStyle = `rgba(0, 240, 255, ${r.alpha * 0.45})`;
+        ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius * 0.7, 0, Math.PI * 2);
+        ctx.arc(r.x, r.y, r.radius * 0.65, 0, Math.PI * 2);
         ctx.stroke();
       }
     }
@@ -218,7 +229,7 @@ export class LightingEngine {
   }
 
   /**
-   * Renders thief footstep ghosting trails.
+   * Renders footstep trails.
    */
   renderFootsteps(ctx, footsteps) {
     ctx.save();
@@ -227,8 +238,7 @@ export class LightingEngine {
       ctx.save();
       ctx.translate(step.x, step.y);
       ctx.rotate(step.facing);
-      ctx.fillStyle = `rgba(0, 240, 255, ${step.alpha * 0.35})`;
-      // Dual boot-tread prints
+      ctx.fillStyle = `rgba(0, 240, 255, ${step.alpha * 0.32})`;
       ctx.fillRect(-3, -4, 3, 7);
       ctx.fillRect(1, -4, 3, 7);
       ctx.restore();
@@ -244,12 +254,12 @@ export class LightingEngine {
     for (let sc of smokeClouds) {
       if (!sc.active || sc.alpha <= 0) continue;
       const grad = ctx.createRadialGradient(
-        sc.x, sc.y, sc.radius * 0.2,
+        sc.x, sc.y, sc.radius * 0.15,
         sc.x, sc.y, sc.radius
       );
-      grad.addColorStop(0, `rgba(180, 210, 230, ${sc.alpha * 0.75})`);
-      grad.addColorStop(0.6, `rgba(120, 150, 180, ${sc.alpha * 0.5})`);
-      grad.addColorStop(1, "rgba(80, 100, 130, 0)");
+      grad.addColorStop(0, `rgba(190, 220, 240, ${sc.alpha * 0.75})`);
+      grad.addColorStop(0.55, `rgba(120, 150, 185, ${sc.alpha * 0.50})`);
+      grad.addColorStop(1, "rgba(60, 90, 120, 0)");
 
       ctx.fillStyle = grad;
       ctx.beginPath();

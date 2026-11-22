@@ -1,5 +1,5 @@
 /**
- * main.js - Velvet Circuit Master Entrypoint & Simulation Loop (v1.0.0)
+ * main.js - Velvet Circuit Master Entrypoint & Simulation Loop (v2.0.0)
  * Coordinates rendering, audio, guards, cameras, gadgets, and input handling.
  * Native 1280x480 tactical widescreen resolution for desktop Chrome.
  */
@@ -47,6 +47,7 @@ export class VelvetGame {
     this.lastTime = performance.now();
     this.isPaused = false;
     this.isVictory = false;
+    this.showDebriefOverlay = false;
 
     this.bindEvents();
     this.loadFloor(0);
@@ -67,6 +68,7 @@ export class VelvetGame {
 
     // Reset Alarm System for new floor
     this.alarmSystem = new AlarmSystem();
+    this.showDebriefOverlay = false;
   }
 
   bindEvents() {
@@ -84,6 +86,11 @@ export class VelvetGame {
 
       // Restart floor [R]
       if (e.code === 'KeyR') this.loadFloor(this.currentFloorIndex);
+
+      // Debrief Space toggle
+      if (e.code === 'Space' && (this.showDebriefOverlay || this.isVictory)) {
+        this.loadFloor(0);
+      }
     });
 
     window.addEventListener('keyup', (e) => {
@@ -102,7 +109,6 @@ export class VelvetGame {
       this.audio.ensureContext();
       if (e.button === 0) {
         this.inputState.mouse.isDown = true;
-        // Deploy active gadget at mouse position
         this.gadgetManager.useCurrent(
           this.thief.x,
           this.thief.y,
@@ -122,7 +128,7 @@ export class VelvetGame {
   }
 
   update(dt) {
-    if (this.isVictory) return;
+    if (this.isVictory || this.showDebriefOverlay) return;
 
     // 1. Update Laser Grids
     for (let laser of this.level.lasers) {
@@ -159,7 +165,7 @@ export class VelvetGame {
       () => this.onFloorCleared()
     );
 
-    // 4. Update Cameras
+    // 4. Update Cameras with furniture occlusion
     this.cameraSystem.update(
       dt,
       this.thief,
@@ -167,10 +173,11 @@ export class VelvetGame {
       this.gadgetManager.smokeClouds,
       this.alarmSystem,
       this.guards,
-      this.audio
+      this.audio,
+      this.level.furniture
     );
 
-    // 5. Update Guards FSM
+    // 5. Update Guards FSM with furniture occlusion
     for (let guard of this.guards) {
       guard.update(
         dt,
@@ -178,7 +185,8 @@ export class VelvetGame {
         this.level.walls,
         this.gadgetManager.smokeClouds,
         this.alarmSystem,
-        this.audio
+        this.audio,
+        this.level.furniture
       );
     }
 
@@ -195,6 +203,7 @@ export class VelvetGame {
       this.loadFloor(this.currentFloorIndex + 1);
     } else {
       this.isVictory = true;
+      this.showDebriefOverlay = true;
       this.audio.playLevelComplete();
     }
   }
@@ -224,14 +233,14 @@ export class VelvetGame {
       this.lighting.renderLaserBeam(this.ctx, laser);
     }
 
-    // 8. Volumetric Guard Vision Cones
+    // 8. Volumetric Guard Vision Cones with furniture obstacle shadow casting
     for (let guard of this.guards) {
-      this.lighting.renderGuardCone(this.ctx, guard, this.level.walls, this.gadgetManager.smokeClouds);
+      this.lighting.renderGuardCone(this.ctx, guard, this.level.walls, this.gadgetManager.smokeClouds, this.level.furniture);
     }
 
-    // 9. Volumetric Camera Beams & Scanlines
+    // 9. Volumetric Camera Beams & Scanlines with furniture obstacle shadow casting
     for (let cam of this.cameraSystem.cameras) {
-      this.lighting.renderCameraCone(this.ctx, cam, this.level.walls, this.gadgetManager.smokeClouds);
+      this.lighting.renderCameraCone(this.ctx, cam, this.level.walls, this.gadgetManager.smokeClouds, this.level.furniture);
     }
 
     // 10. Smoke Clouds & Gadget Effects
@@ -243,10 +252,10 @@ export class VelvetGame {
     this.renderer.renderCameras(this.cameraSystem.cameras);
     this.renderer.renderGuards(this.guards);
 
-    // 12. Thief Operative
+    // 12. Thief Operative Top-Down Silhouette
     this.renderer.renderThief(this.thief, this.inputState.mouse.x, this.inputState.mouse.y);
 
-    // 13. Walls (Blueprint Double-Lines)
+    // 13. Walls (Thick Filled Slate with Architectural Blueprint Lines)
     this.renderer.renderWalls(this.level.walls);
 
     // 14. Emergency Strobe Light Overlay if LOCKDOWN
@@ -266,20 +275,9 @@ export class VelvetGame {
       this.audio
     );
 
-    // Victory Banner
-    if (this.isVictory) {
-      this.ctx.fillStyle = "rgba(7, 12, 22, 0.92)";
-      this.ctx.fillRect(this.width * 0.5 - 280, this.height * 0.5 - 60, 560, 120);
-      this.ctx.strokeStyle = "#10B981";
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeRect(this.width * 0.5 - 280, this.height * 0.5 - 60, 560, 120);
-
-      this.ctx.font = "bold 22px 'Courier New', monospace";
-      this.ctx.fillStyle = "#10B981";
-      this.ctx.fillText("HEIST ACCOMPLISHED // SYNDICATE SECURED", this.width * 0.5 - 240, this.height * 0.5 - 15);
-      this.ctx.font = "12px 'Courier New', monospace";
-      this.ctx.fillStyle = "#00F0FF";
-      this.ctx.fillText("ALL 3 VAULTS PLUNDERED WITH ZERO FATALITIES. PRESS [R] TO REPLAY.", this.width * 0.5 - 240, this.height * 0.5 + 25);
+    // 16. Tactical Debrief Scorecard Overlay (for Shot 4 or Victory)
+    if (this.showDebriefOverlay) {
+      this.renderer.renderDebriefScorecard(this.ctx);
     }
   }
 
@@ -297,16 +295,13 @@ window.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('gameCanvas');
   const game = new VelvetGame(canvas);
 
-  // Check for screenshot query parameter
   const urlParams = new URLSearchParams(window.location.search);
   const shot = urlParams.get('shot');
 
   if (shot) {
-    // Stage deterministic frame and render once
     stageScreenshotScenario(shot, game);
     game.render();
   } else {
-    // Normal Interactive Play Loop
     function loop(timestamp) {
       const dt = Math.min(0.05, (timestamp - game.lastTime) / 1000);
       game.lastTime = timestamp;

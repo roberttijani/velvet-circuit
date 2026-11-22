@@ -1,6 +1,7 @@
 /**
- * levels.js - Handcrafted Multi-Floor Blueprints for Velvet Circuit
- * Defines 3 progressive tactical floors: Gallery, Server Vault, and Penthouse Safe.
+ * levels.js - Handcrafted Multi-Floor Blueprints for Velvet Circuit (v2)
+ * Features 3 progressive tactical floors: The Luminary Gallery, The Obsidian Mainframe,
+ * and The Sovereign Sanctum. Clamped strictly within safe viewport margins (40..1240, 44..448).
  */
 
 export const LEVEL_1_GALLERY = {
@@ -9,12 +10,12 @@ export const LEVEL_1_GALLERY = {
   subtitle: "GROUND FLOOR // EXHIBITION WING",
   blueprintCode: "BLPR-SEC01-ATRIUM",
   floorType: "gallery",
-  thiefStart: { x: 90, y: 390, facing: 0 },
+  thiefStart: { x: 100, y: 380, facing: 0 },
   loot: {
     name: "THE STAR OF ALEXANDRIA",
-    x: 880,
-    y: 240,
-    radius: 28,
+    x: 980,
+    y: 335,
+    radius: 26,
     type: "diamond",
     glowColor: "#00F0FF",
     value: "$2,500,000",
@@ -22,75 +23,80 @@ export const LEVEL_1_GALLERY = {
   },
   extraction: {
     name: "EXFIL TRANSIT CAR",
-    x: 1200,
-    y: 360,
-    w: 60,
-    h: 80
+    x: 1140,
+    y: 340,
+    w: 80,
+    h: 88
   },
   rooms: [
-    { name: "RECEPTION FOYER", x: 40, y: 300, w: 220, h: 150, tag: "R-01" },
-    { name: "CLASSICAL WING", x: 40, y: 40, w: 320, h: 240, tag: "R-02" },
-    { name: "CENTRAL ROTUNDA", x: 380, y: 40, w: 460, h: 410, tag: "R-03" },
-    { name: "SECURITY ANTECHAMBER", x: 860, y: 40, w: 380, h: 160, tag: "R-04" },
-    { name: "VIP GEM VAULT", x: 860, y: 220, w: 280, h: 230, tag: "R-05" },
-    { name: "EAST LOADING DOCK", x: 1160, y: 220, w: 100, h: 230, tag: "R-06" }
+    { name: "RECEPTION FOYER", x: 44, y: 280, w: 236, h: 164, tag: "R-01" },
+    { name: "CLASSICAL WING", x: 44, y: 48, w: 316, h: 224, tag: "R-02" },
+    { name: "CENTRAL ROTUNDA", x: 368, y: 48, w: 472, h: 396, tag: "R-03" },
+    { name: "SECURITY ANTECHAMBER", x: 848, y: 48, w: 264, h: 172, tag: "R-04" },
+    { name: "VIP GEM VAULT", x: 848, y: 228, w: 264, h: 216, tag: "R-05" },
+    { name: "EAST LOADING DOCK", x: 1120, y: 48, w: 116, h: 396, tag: "R-06" }
   ],
   walls: [
-    // Outer perimeter
-    { x1: 30, y1: 30, x2: 1250, y2: 30 },
-    { x1: 1250, y1: 30, x2: 1250, y2: 450 },
-    { x1: 1250, y1: 450, x2: 30, y2: 450 },
-    { x1: 30, y1: 450, x2: 30, y2: 30 },
+    // Outer perimeter within safe margins
+    { x1: 40, y1: 44, x2: 1240, y2: 44 },
+    { x1: 1240, y1: 44, x2: 1240, y2: 448 },
+    { x1: 1240, y1: 448, x2: 40, y2: 448 },
+    { x1: 40, y1: 448, x2: 40, y2: 44 },
 
-    // Interior partitions with door openings
-    // Foyer to Classical Wing (x=30..260, y=290)
-    { x1: 30, y1: 290, x2: 130, y2: 290 },
-    { x1: 190, y1: 290, x2: 370, y2: 290 },
+    // Foyer to Classical Wing (y=276)
+    { x1: 40, y1: 276, x2: 130, y2: 276 },
+    { x1: 190, y1: 276, x2: 364, y2: 276 },
 
-    // Classical Wing to Rotunda (x=370, y=30..450)
-    { x1: 370, y1: 30, x2: 370, y2: 140 },
-    { x1: 370, y1: 200, x2: 370, y2: 330 },
-    { x1: 370, y1: 390, x2: 370, y2: 450 },
+    // Classical Wing to Rotunda (x=364)
+    { x1: 364, y1: 44, x2: 364, y2: 140 },
+    { x1: 364, y1: 200, x2: 364, y2: 330 },
+    { x1: 364, y1: 390, x2: 364, y2: 448 },
 
-    // Rotunda to Gem Vault / Antechamber (x=850, y=30..450)
-    { x1: 850, y1: 30, x2: 850, y2: 120 },
-    { x1: 850, y1: 170, x2: 850, y2: 320 },
-    { x1: 850, y1: 380, x2: 850, y2: 450 },
+    // Rotunda to Antechamber & Gem Vault (x=844)
+    { x1: 844, y1: 44, x2: 844, y2: 120 },
+    { x1: 844, y1: 170, x2: 844, y2: 320 },
+    { x1: 844, y1: 380, x2: 844, y2: 448 },
 
-    // Divider between Antechamber and Gem Vault (y=210)
-    { x1: 850, y1: 210, x2: 970, y2: 210 },
-    { x1: 1030, y1: 210, x2: 1150, y2: 210 },
+    // Divider between Antechamber and Gem Vault (y=224)
+    { x1: 844, y1: 224, x2: 950, y2: 224 },
+    { x1: 1010, y1: 224, x2: 1116, y2: 224 },
 
-    // Gem Vault to East Dock (x=1150, y=210..450)
-    { x1: 1150, y1: 210, x2: 1150, y2: 330 },
-    { x1: 1150, y1: 390, x2: 1150, y2: 450 }
+    // Gem Vault to East Dock (x=1116)
+    { x1: 1116, y1: 44, x2: 1116, y2: 330 },
+    { x1: 1116, y1: 390, x2: 1116, y2: 448 }
+  ],
+  carpetRunners: [
+    // Velvet runners along main corridors
+    { x: 374, y: 228, w: 460, h: 36, color: "rgba(120, 15, 30, 0.55)" },
+    { x: 586, y: 56, w: 36, h: 380, color: "rgba(120, 15, 30, 0.55)" },
+    { x: 852, y: 325, w: 256, h: 36, color: "rgba(120, 15, 30, 0.65)" }
   ],
   furniture: [
     // Classical Wing statues/plinths
-    { type: "plinth", x: 120, y: 110, w: 40, h: 40, label: "MARBLE BUST" },
-    { type: "plinth", x: 250, y: 110, w: 40, h: 40, label: "BRONZE VASE" },
-    { type: "vitrine", x: 180, y: 200, w: 70, h: 36, label: "RELIC CASE" },
+    { type: "plinth", x: 120, y: 110, w: 36, h: 36, label: "MARBLE BUST" },
+    { type: "plinth", x: 260, y: 110, w: 36, h: 36, label: "BRONZE VASE" },
+    { type: "vitrine", x: 170, y: 195, w: 76, h: 34, label: "RELIC CASE" },
 
     // Central Rotunda display cases & columns
-    { type: "column", x: 470, y: 130, w: 40, h: 40, label: "CORINTHIAN COL" },
-    { type: "column", x: 730, y: 130, w: 40, h: 40, label: "CORINTHIAN COL" },
-    { type: "column", x: 470, y: 350, w: 40, h: 40, label: "CORINTHIAN COL" },
-    { type: "column", x: 730, y: 350, w: 40, h: 40, label: "CORINTHIAN COL" },
-    { type: "vitrine", x: 570, y: 220, w: 80, h: 40, label: "GOLDEN CROWN" },
+    { type: "column", x: 470, y: 125, w: 38, h: 38, label: "CORINTHIAN COL" },
+    { type: "column", x: 700, y: 125, w: 38, h: 38, label: "CORINTHIAN COL" },
+    { type: "column", x: 470, y: 330, w: 38, h: 38, label: "CORINTHIAN COL" },
+    { type: "column", x: 700, y: 330, w: 38, h: 38, label: "CORINTHIAN COL" },
+    { type: "vitrine", x: 565, y: 222, w: 78, h: 36, label: "GOLDEN CROWN" },
 
     // Security Antechamber desk
-    { type: "desk", x: 930, y: 100, w: 80, h: 40, label: "GUARD CONSOLE" },
+    { type: "desk", x: 920, y: 95, w: 76, h: 36, label: "SECURITY DESK" },
 
     // VIP Gem Vault central plinth (holds loot)
-    { type: "loot_pedestal", x: 860, y: 220, w: 40, h: 40, label: "STAR VITRINE" }
+    { type: "loot_pedestal", x: 960, y: 315, w: 40, h: 40, label: "STAR VITRINE" }
   ],
   lasers: [
-    // Corridors protected by cycling laser tripwires
+    // Corridor tripwires
     {
       id: "L1",
-      x1: 850,
+      x1: 844,
       y1: 120,
-      x2: 850,
+      x2: 844,
       y2: 170,
       period: 3.5,
       duty: 0.6,
@@ -99,9 +105,9 @@ export const LEVEL_1_GALLERY = {
     },
     {
       id: "L2",
-      x1: 1150,
+      x1: 1116,
       y1: 330,
-      x2: 1150,
+      x2: 1116,
       y2: 390,
       period: 4.0,
       duty: 0.55,
@@ -112,7 +118,7 @@ export const LEVEL_1_GALLERY = {
   terminals: [
     {
       id: "TERM_1",
-      x: 950,
+      x: 940,
       y: 80,
       label: "LASER OVERRIDE",
       type: "laser_override",
@@ -123,22 +129,22 @@ export const LEVEL_1_GALLERY = {
   cameras: [
     {
       id: "CAM_1",
-      x: 370,
-      y: 40,
-      mountAngle: Math.PI * 0.75, // pointing down-left into classical wing
-      sweepAngle: 1.0,
+      x: 364,
+      y: 50,
+      mountAngle: Math.PI * 0.72,
+      sweepAngle: 0.95,
       sweepSpeed: 0.8,
-      range: 220,
+      range: 215,
       fov: 0.85
     },
     {
       id: "CAM_2",
-      x: 850,
+      x: 844,
       y: 440,
-      mountAngle: -Math.PI * 0.75, // pointing up-left into rotunda
-      sweepAngle: 1.2,
+      mountAngle: -Math.PI * 0.72,
+      sweepAngle: 1.1,
       sweepSpeed: 0.7,
-      range: 240,
+      range: 225,
       fov: 0.8
     }
   ],
@@ -146,17 +152,17 @@ export const LEVEL_1_GALLERY = {
     {
       id: "G1",
       name: "Sentry Vance",
-      x: 300,
-      y: 180,
+      x: 290,
+      y: 175,
       speed: 65,
       viewDist: 210,
       fov: 1.25,
       facing: 0,
       patrol: [
-        { x: 300, y: 180, wait: 2.0 },
-        { x: 140, y: 180, wait: 1.8 },
-        { x: 140, y: 80, wait: 1.5 },
-        { x: 300, y: 80, wait: 1.5 }
+        { x: 290, y: 175, wait: 2.0 },
+        { x: 130, y: 175, wait: 1.8 },
+        { x: 130, y: 80, wait: 1.5 },
+        { x: 290, y: 80, wait: 1.5 }
       ]
     },
     {
@@ -165,7 +171,7 @@ export const LEVEL_1_GALLERY = {
       x: 600,
       y: 330,
       speed: 70,
-      viewDist: 220,
+      viewDist: 215,
       fov: 1.25,
       facing: Math.PI,
       patrol: [
@@ -184,12 +190,12 @@ export const LEVEL_2_SERVER_VAULT = {
   subtitle: "SUB-LEVEL B2 // DATA REPOSITORY",
   blueprintCode: "BLPR-SEC02-MAINFRAME",
   floorType: "server",
-  thiefStart: { x: 80, y: 80, facing: 0 },
+  thiefStart: { x: 90, y: 90, facing: 0 },
   loot: {
     name: "QUANTUM CRYPTO CIPHER",
-    x: 1040,
-    y: 240,
-    radius: 28,
+    x: 1080,
+    y: 245,
+    radius: 26,
     type: "cube",
     glowColor: "#00F0FF",
     value: "$10,000,000",
@@ -197,73 +203,78 @@ export const LEVEL_2_SERVER_VAULT = {
   },
   extraction: {
     name: "VENT CHUTE EXFIL",
-    x: 80,
-    y: 390,
-    w: 60,
-    h: 50
+    x: 65,
+    y: 360,
+    w: 75,
+    h: 70
   },
   rooms: [
-    { name: "ACCESS CORRIDOR", x: 40, y: 40, w: 200, h: 400, tag: "S-01" },
-    { name: "SERVER RACK ARRAY NORTH", x: 260, y: 40, w: 400, h: 180, tag: "S-02" },
-    { name: "SERVER RACK ARRAY SOUTH", x: 260, y: 240, w: 400, h: 200, tag: "S-03" },
-    { name: "OPTICAL INTERFACE LAB", x: 680, y: 40, w: 280, h: 400, tag: "S-04" },
-    { name: "PRIMARY CRYPTO CORE", x: 980, y: 120, w: 260, h: 250, tag: "S-05" }
+    { name: "ACCESS CORRIDOR", x: 44, y: 48, w: 196, h: 396, tag: "S-01" },
+    { name: "SERVER RACK NORTH", x: 248, y: 48, w: 412, h: 180, tag: "S-02" },
+    { name: "SERVER RACK SOUTH", x: 248, y: 236, w: 412, h: 208, tag: "S-03" },
+    { name: "OPTICAL INTERFACE LAB", x: 668, y: 48, w: 292, h: 396, tag: "S-04" },
+    { name: "PRIMARY CRYPTO CORE", x: 968, y: 120, w: 268, h: 250, tag: "S-05" }
   ],
   walls: [
     // Outer perimeter
-    { x1: 30, y1: 30, x2: 1250, y2: 30 },
-    { x1: 1250, y1: 30, x2: 1250, y2: 450 },
-    { x1: 1250, y1: 450, x2: 30, y2: 450 },
-    { x1: 30, y1: 450, x2: 30, y2: 30 },
+    { x1: 40, y1: 44, x2: 1240, y2: 44 },
+    { x1: 1240, y1: 44, x2: 1240, y2: 448 },
+    { x1: 1240, y1: 448, x2: 40, y2: 448 },
+    { x1: 40, y1: 448, x2: 40, y2: 44 },
 
-    // Access Corridor to Server Banks (x=240)
-    { x1: 240, y1: 30, x2: 240, y2: 130 },
-    { x1: 240, y1: 190, x2: 240, y2: 310 },
-    { x1: 240, y1: 370, x2: 240, y2: 450 },
+    // Access Corridor to Server Banks (x=244)
+    { x1: 244, y1: 44, x2: 244, y2: 140 },
+    { x1: 244, y1: 200, x2: 244, y2: 300 },
+    { x1: 244, y1: 360, x2: 244, y2: 448 },
 
-    // Divider between North & South Server Array (y=230)
-    { x1: 240, y1: 230, x2: 440, y2: 230 },
-    { x1: 500, y1: 230, x2: 670, y2: 230 },
+    // Divider between North & South Server Array (y=232)
+    { x1: 244, y1: 232, x2: 440, y2: 232 },
+    { x1: 500, y1: 232, x2: 664, y2: 232 },
 
-    // Server Arrays to Optical Lab (x=670)
-    { x1: 670, y1: 30, x2: 670, y2: 120 },
-    { x1: 670, y1: 180, x2: 670, y2: 320 },
-    { x1: 670, y1: 380, x2: 670, y2: 450 },
+    // Server Arrays to Optical Lab (x=664)
+    { x1: 664, y1: 44, x2: 664, y2: 130 },
+    { x1: 664, y1: 190, x2: 664, y2: 310 },
+    { x1: 664, y1: 370, x2: 664, y2: 448 },
 
-    // Optical Lab to Crypto Core (x=970)
-    { x1: 970, y1: 110, x2: 1250, y2: 110 },
-    { x1: 970, y1: 110, x2: 970, y2: 200 },
-    { x1: 970, y1: 260, x2: 970, y2: 380 },
-    { x1: 970, y1: 380, x2: 1250, y2: 380 }
+    // Optical Lab to Crypto Core (x=964)
+    { x1: 964, y1: 116, x2: 1240, y2: 116 },
+    { x1: 964, y1: 116, x2: 964, y2: 200 },
+    { x1: 964, y1: 260, x2: 964, y2: 374 },
+    { x1: 964, y1: 374, x2: 1240, y2: 374 }
+  ],
+  conduits: [
+    // Glowing fiber-optic channels across server floors
+    { x1: 244, y1: 170, x2: 664, y2: 170 },
+    { x1: 470, y1: 50, x2: 470, y2: 440 },
+    { x1: 664, y1: 250, x2: 964, y2: 250 }
   ],
   furniture: [
     // North Server Racks
-    { type: "server", x: 310, y: 80, w: 90, h: 35, label: "RACK N-01" },
-    { type: "server", x: 460, y: 80, w: 90, h: 35, label: "RACK N-02" },
-    { type: "server", x: 310, y: 150, w: 90, h: 35, label: "RACK N-03" },
-    { type: "server", x: 460, y: 150, w: 90, h: 35, label: "RACK N-04" },
+    { type: "server", x: 300, y: 75, w: 90, h: 34, label: "RACK N-01" },
+    { type: "server", x: 450, y: 75, w: 90, h: 34, label: "RACK N-02" },
+    { type: "server", x: 300, y: 145, w: 90, h: 34, label: "RACK N-03" },
+    { type: "server", x: 450, y: 145, w: 90, h: 34, label: "RACK N-04" },
 
     // South Server Racks
-    { type: "server", x: 310, y: 290, w: 90, h: 35, label: "RACK S-01" },
-    { type: "server", x: 460, y: 290, w: 90, h: 35, label: "RACK S-02" },
-    { type: "server", x: 310, y: 360, w: 90, h: 35, label: "RACK S-03" },
-    { type: "server", x: 460, y: 360, w: 90, h: 35, label: "RACK S-04" },
+    { type: "server", x: 300, y: 280, w: 90, h: 34, label: "RACK S-01" },
+    { type: "server", x: 450, y: 280, w: 90, h: 34, label: "RACK S-02" },
+    { type: "server", x: 300, y: 350, w: 90, h: 34, label: "RACK S-03" },
+    { type: "server", x: 450, y: 350, w: 90, h: 34, label: "RACK S-04" },
 
     // Optical Lab Terminals
-    { type: "desk", x: 740, y: 120, w: 80, h: 40, label: "DIAGNOSTIC RIG" },
-    { type: "desk", x: 740, y: 310, w: 80, h: 40, label: "MAINFRAME TERMINAL" },
+    { type: "desk", x: 740, y: 110, w: 76, h: 36, label: "DIAGNOSTIC RIG" },
+    { type: "desk", x: 740, y: 310, w: 76, h: 36, label: "CONSOLE S-04" },
 
     // Core Plinth
-    { type: "loot_pedestal", x: 1040, y: 240, w: 44, h: 44, label: "CRYPTO CRADLE" }
+    { type: "loot_pedestal", x: 1060, y: 225, w: 40, h: 40, label: "CRYPTO CRADLE" }
   ],
   lasers: [
-    // Dual crossing laser corridors
     {
       id: "L2_1",
-      x1: 670,
-      y1: 120,
-      x2: 670,
-      y2: 180,
+      x1: 664,
+      y1: 130,
+      x2: 664,
+      y2: 190,
       period: 3.0,
       duty: 0.65,
       phase: 0.0,
@@ -271,24 +282,13 @@ export const LEVEL_2_SERVER_VAULT = {
     },
     {
       id: "L2_2",
-      x1: 970,
+      x1: 964,
       y1: 200,
-      x2: 970,
+      x2: 964,
       y2: 260,
       period: 3.2,
       duty: 0.7,
       phase: 1.2,
-      color: "#FF003C"
-    },
-    {
-      id: "L2_3",
-      x1: 720,
-      y1: 230,
-      x2: 860,
-      y2: 230,
-      period: 4.0,
-      duty: 0.5,
-      phase: 0.5,
       color: "#FF003C"
     }
   ],
@@ -296,8 +296,8 @@ export const LEVEL_2_SERVER_VAULT = {
     {
       id: "TERM_2A",
       x: 750,
-      y: 90,
-      label: "SECURITY GATE BYPASS",
+      y: 85,
+      label: "GATE BYPASS",
       type: "door_release",
       hacked: false,
       hackTime: 1.5
@@ -306,32 +306,32 @@ export const LEVEL_2_SERVER_VAULT = {
   cameras: [
     {
       id: "CAM_2A",
-      x: 240,
-      y: 40,
-      mountAngle: Math.PI * 0.25,
-      sweepAngle: 1.1,
+      x: 244,
+      y: 50,
+      mountAngle: Math.PI * 0.28,
+      sweepAngle: 1.0,
       sweepSpeed: 0.9,
-      range: 230,
+      range: 220,
       fov: 0.8
     },
     {
       id: "CAM_2B",
-      x: 670,
-      y: 440,
-      mountAngle: -Math.PI * 0.25,
-      sweepAngle: 1.2,
+      x: 664,
+      y: 438,
+      mountAngle: -Math.PI * 0.28,
+      sweepAngle: 1.1,
       sweepSpeed: 0.85,
-      range: 240,
+      range: 230,
       fov: 0.85
     },
     {
       id: "CAM_2C",
-      x: 1240,
-      y: 120,
+      x: 1230,
+      y: 126,
       mountAngle: Math.PI,
       sweepAngle: 0.9,
       sweepSpeed: 1.0,
-      range: 230,
+      range: 220,
       fov: 0.75
     }
   ],
@@ -339,49 +339,49 @@ export const LEVEL_2_SERVER_VAULT = {
     {
       id: "G2_1",
       name: "Enforcer Thorne",
-      x: 580,
-      y: 120,
+      x: 560,
+      y: 110,
       speed: 75,
-      viewDist: 220,
+      viewDist: 215,
       fov: 1.3,
       facing: 0,
       patrol: [
-        { x: 580, y: 120, wait: 1.5 },
-        { x: 280, y: 120, wait: 2.0 },
-        { x: 280, y: 200, wait: 1.2 },
-        { x: 580, y: 200, wait: 1.5 }
+        { x: 560, y: 110, wait: 1.5 },
+        { x: 270, y: 110, wait: 2.0 },
+        { x: 270, y: 195, wait: 1.2 },
+        { x: 560, y: 195, wait: 1.5 }
       ]
     },
     {
       id: "G2_2",
       name: "Enforcer Cross",
-      x: 380,
-      y: 330,
+      x: 370,
+      y: 320,
       speed: 70,
-      viewDist: 220,
+      viewDist: 215,
       fov: 1.3,
       facing: Math.PI,
       patrol: [
-        { x: 380, y: 330, wait: 1.6 },
-        { x: 580, y: 330, wait: 1.8 },
-        { x: 580, y: 410, wait: 1.4 },
-        { x: 380, y: 410, wait: 1.5 }
+        { x: 370, y: 320, wait: 1.6 },
+        { x: 570, y: 320, wait: 1.8 },
+        { x: 570, y: 405, wait: 1.4 },
+        { x: 370, y: 405, wait: 1.5 }
       ]
     },
     {
       id: "G2_3",
       name: "Patrol Mercer",
-      x: 820,
-      y: 350,
+      x: 810,
+      y: 340,
       speed: 80,
-      viewDist: 230,
+      viewDist: 225,
       fov: 1.35,
       facing: -Math.PI * 0.5,
       patrol: [
-        { x: 820, y: 350, wait: 2.0 },
-        { x: 820, y: 150, wait: 2.0 },
-        { x: 920, y: 150, wait: 1.5 },
-        { x: 920, y: 350, wait: 1.5 }
+        { x: 810, y: 340, wait: 2.0 },
+        { x: 810, y: 140, wait: 2.0 },
+        { x: 910, y: 140, wait: 1.5 },
+        { x: 910, y: 340, wait: 1.5 }
       ]
     }
   ]
@@ -393,12 +393,12 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
   subtitle: "PENTHOUSE LEVEL 88 // EXECUTIVE SAFE",
   blueprintCode: "BLPR-SEC03-SANCTUM",
   floorType: "penthouse",
-  thiefStart: { x: 80, y: 240, facing: 0 },
+  thiefStart: { x: 90, y: 240, facing: 0 },
   loot: {
-    name: "THE SOVEREIGN LEDGER & BULLION",
-    x: 1070,
-    y: 240,
-    radius: 32,
+    name: "SOVEREIGN LEDGER & BULLION",
+    x: 1080,
+    y: 245,
+    radius: 30,
     type: "safe",
     glowColor: "#FFD700",
     value: "$50,000,000",
@@ -406,63 +406,62 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
   },
   extraction: {
     name: "ROOFTOP SKY-CRANE",
-    x: 70,
-    y: 370,
-    w: 70,
-    h: 60
+    x: 65,
+    y: 350,
+    w: 80,
+    h: 80
   },
   rooms: [
-    { name: "SKY BRIDGE ANTECHAMBER", x: 40, y: 120, w: 200, h: 240, tag: "P-01" },
-    { name: "GRAND MEZZANINE SUITE", x: 260, y: 40, w: 440, h: 400, tag: "P-02" },
-    { name: "EXECUTIVE BOARDROOM", x: 720, y: 40, w: 240, h: 200, tag: "P-03" },
-    { name: "HIGH-VOLTAGE INTERLOCK", x: 720, y: 260, w: 240, h: 180, tag: "P-04" },
-    { name: "MASTER TITANIUM SAFE", x: 980, y: 90, w: 260, h: 300, tag: "P-05" }
+    { name: "SKY BRIDGE FOYER", x: 44, y: 110, w: 196, h: 260, tag: "P-01" },
+    { name: "GRAND MEZZANINE SUITE", x: 248, y: 48, w: 452, h: 396, tag: "P-02" },
+    { name: "EXECUTIVE BOARDROOM", x: 708, y: 48, w: 248, h: 196, tag: "P-03" },
+    { name: "HIGH-VOLTAGE INTERLOCK", x: 708, y: 252, w: 248, h: 192, tag: "P-04" },
+    { name: "TITANIUM MASTER VAULT", x: 964, y: 90, w: 272, h: 300, tag: "P-05" }
   ],
   walls: [
     // Outer perimeter
-    { x1: 30, y1: 30, x2: 1250, y2: 30 },
-    { x1: 1250, y1: 30, x2: 1250, y2: 450 },
-    { x1: 1250, y1: 450, x2: 30, y2: 450 },
-    { x1: 30, y1: 450, x2: 30, y2: 30 },
+    { x1: 40, y1: 44, x2: 1240, y2: 44 },
+    { x1: 1240, y1: 44, x2: 1240, y2: 448 },
+    { x1: 1240, y1: 448, x2: 40, y2: 448 },
+    { x1: 40, y1: 448, x2: 40, y2: 44 },
 
-    // Skybridge to Mezzanine (x=240)
-    { x1: 240, y1: 30, x2: 240, y2: 180 },
-    { x1: 240, y1: 290, x2: 240, y2: 450 },
+    // Skybridge to Mezzanine (x=244)
+    { x1: 244, y1: 44, x2: 244, y2: 180 },
+    { x1: 244, y1: 290, x2: 244, y2: 448 },
 
-    // Mezzanine to Boardroom & Interlock (x=710)
-    { x1: 710, y1: 30, x2: 710, y2: 130 },
-    { x1: 710, y1: 190, x2: 710, y2: 290 },
-    { x1: 710, y1: 350, x2: 710, y2: 450 },
+    // Mezzanine to Boardroom & Interlock (x=704)
+    { x1: 704, y1: 44, x2: 704, y2: 130 },
+    { x1: 704, y1: 190, x2: 704, y2: 290 },
+    { x1: 704, y1: 350, x2: 704, y2: 448 },
 
-    // Divider between Boardroom & Interlock (y=250)
-    { x1: 710, y1: 250, x2: 810, y2: 250 },
-    { x1: 870, y1: 250, x2: 970, y2: 250 },
+    // Divider between Boardroom & Interlock (y=248)
+    { x1: 704, y1: 248, x2: 800, y2: 248 },
+    { x1: 860, y1: 248, x2: 960, y2: 248 },
 
-    // Vault wall & blast doors (x=970)
-    { x1: 970, y1: 30, x2: 970, y2: 190 },
-    { x1: 970, y1: 290, x2: 970, y2: 450 }
+    // Vault wall & blast doors (x=960)
+    { x1: 960, y1: 44, x2: 960, y2: 185 },
+    { x1: 960, y1: 295, x2: 960, y2: 448 }
   ],
   furniture: [
-    // Mezzanine luxury furniture & decorative columns
-    { type: "column", x: 380, y: 120, w: 42, h: 42, label: "MARBLE COLUMN" },
-    { type: "column", x: 580, y: 120, w: 42, h: 42, label: "MARBLE COLUMN" },
-    { type: "column", x: 380, y: 340, w: 42, h: 42, label: "MARBLE COLUMN" },
-    { type: "column", x: 580, y: 340, w: 42, h: 42, label: "MARBLE COLUMN" },
-    { type: "desk", x: 450, y: 220, w: 100, h: 46, label: "GLASS LOUNGE" },
+    // Mezzanine luxury columns & lounge
+    { type: "column", x: 370, y: 120, w: 40, h: 40, label: "MARBLE COLUMN" },
+    { type: "column", x: 570, y: 120, w: 40, h: 40, label: "MARBLE COLUMN" },
+    { type: "column", x: 370, y: 330, w: 40, h: 40, label: "MARBLE COLUMN" },
+    { type: "column", x: 570, y: 330, w: 40, h: 40, label: "MARBLE COLUMN" },
+    { type: "desk", x: 440, y: 220, w: 96, h: 44, label: "GLASS LOUNGE" },
 
-    // Boardroom table
-    { type: "desk", x: 770, y: 100, w: 120, h: 50, label: "MAHOGANY TABLE" },
+    // Boardroom executive table
+    { type: "desk", x: 760, y: 100, w: 110, h: 48, label: "BOARD TABLE" },
 
-    // Master Safe Door Frame
-    { type: "loot_pedestal", x: 1070, y: 240, w: 60, h: 60, label: "TITANIUM VAULT" }
+    // Master Safe Pedestal
+    { type: "loot_pedestal", x: 1060, y: 225, w: 50, h: 50, label: "SAFE LOCK" }
   ],
   lasers: [
-    // Multiple synchronized security laser sweeps
     {
       id: "L3_1",
-      x1: 710,
+      x1: 704,
       y1: 130,
-      x2: 710,
+      x2: 704,
       y2: 190,
       period: 2.8,
       duty: 0.65,
@@ -471,9 +470,9 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
     },
     {
       id: "L3_2",
-      x1: 710,
+      x1: 704,
       y1: 290,
-      x2: 710,
+      x2: 704,
       y2: 350,
       period: 2.8,
       duty: 0.65,
@@ -482,10 +481,10 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
     },
     {
       id: "L3_3",
-      x1: 970,
-      y1: 190,
-      x2: 970,
-      y2: 290,
+      x1: 960,
+      y1: 185,
+      x2: 960,
+      y2: 295,
       period: 3.5,
       duty: 0.75,
       phase: 0.7,
@@ -495,9 +494,9 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
   terminals: [
     {
       id: "TERM_3A",
-      x: 820,
+      x: 810,
       y: 70,
-      label: "CIPHER OVERRIDE CONSOLE",
+      label: "CIPHER CONSOLE",
       type: "laser_override",
       hacked: false,
       hackTime: 1.8
@@ -506,32 +505,32 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
   cameras: [
     {
       id: "CAM_3A",
-      x: 240,
-      y: 40,
+      x: 244,
+      y: 50,
       mountAngle: Math.PI * 0.35,
-      sweepAngle: 1.2,
+      sweepAngle: 1.15,
       sweepSpeed: 0.9,
-      range: 240,
+      range: 235,
       fov: 0.85
     },
     {
       id: "CAM_3B",
-      x: 710,
-      y: 440,
+      x: 704,
+      y: 438,
       mountAngle: -Math.PI * 0.6,
-      sweepAngle: 1.3,
+      sweepAngle: 1.25,
       sweepSpeed: 0.8,
-      range: 250,
+      range: 240,
       fov: 0.8
     },
     {
       id: "CAM_3C",
-      x: 1240,
-      y: 40,
-      mountAngle: Math.PI * 0.85,
-      sweepAngle: 1.1,
+      x: 1230,
+      y: 50,
+      mountAngle: Math.PI * 0.82,
+      sweepAngle: 1.05,
       sweepSpeed: 0.95,
-      range: 260,
+      range: 245,
       fov: 0.85
     }
   ],
@@ -540,46 +539,46 @@ export const LEVEL_3_PENTHOUSE_SAFE = {
       id: "G3_1",
       name: "Elite Cmdr Kane",
       x: 320,
-      y: 160,
+      y: 155,
       speed: 80,
-      viewDist: 230,
+      viewDist: 225,
       fov: 1.3,
       facing: 0,
       patrol: [
-        { x: 320, y: 160, wait: 1.5 },
-        { x: 640, y: 160, wait: 1.5 },
-        { x: 640, y: 310, wait: 1.5 },
-        { x: 320, y: 310, wait: 1.5 }
+        { x: 320, y: 155, wait: 1.5 },
+        { x: 630, y: 155, wait: 1.5 },
+        { x: 630, y: 305, wait: 1.5 },
+        { x: 320, y: 305, wait: 1.5 }
       ]
     },
     {
       id: "G3_2",
       name: "Elite Guard Sterling",
-      x: 840,
-      y: 180,
+      x: 830,
+      y: 175,
       speed: 85,
-      viewDist: 240,
+      viewDist: 235,
       fov: 1.3,
       facing: -Math.PI * 0.5,
       patrol: [
-        { x: 840, y: 180, wait: 1.5 },
-        { x: 840, y: 360, wait: 1.8 },
-        { x: 760, y: 360, wait: 1.4 },
-        { x: 760, y: 180, wait: 1.5 }
+        { x: 830, y: 175, wait: 1.5 },
+        { x: 830, y: 350, wait: 1.8 },
+        { x: 750, y: 350, wait: 1.4 },
+        { x: 750, y: 175, wait: 1.5 }
       ]
     },
     {
       id: "G3_3",
       name: "Vault Enforcer Ramos",
-      x: 1120,
+      x: 1100,
       y: 160,
       speed: 75,
-      viewDist: 230,
+      viewDist: 220,
       fov: 1.3,
       facing: Math.PI,
       patrol: [
-        { x: 1120, y: 160, wait: 2.0 },
-        { x: 1120, y: 320, wait: 2.0 }
+        { x: 1100, y: 160, wait: 2.0 },
+        { x: 1100, y: 310, wait: 2.0 }
       ]
     }
   ]

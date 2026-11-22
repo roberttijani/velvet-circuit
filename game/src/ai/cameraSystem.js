@@ -1,9 +1,10 @@
 /**
- * cameraSystem.js - Sweeping Wall-Mounted Security Camera System
- * Handles sinusoidal sweep motions, EMP disruption, digital scanline beam projection, and alarm detection.
+ * cameraSystem.js - Sweeping Wall-Mounted Security Camera System (v2)
+ * Handles sinusoidal sweep motions, EMP disruption, digital scanline beam projection,
+ * obstacle occlusion behind pillars and servers, and alarm detection.
  */
 
-import { hasLineOfSight } from '../world/raycast.js';
+import { hasLineOfSight, getFurnitureOccluderSegments } from '../world/raycast.js';
 
 export class CameraSystem {
   constructor(cameraConfigs = []) {
@@ -23,7 +24,9 @@ export class CameraSystem {
     }));
   }
 
-  update(dt, thief, wallSegments, smokeClouds, alarmSystem, guards, audioEngine) {
+  update(dt, thief, wallSegments, smokeClouds, alarmSystem, guards, audioEngine, furnitureList = []) {
+    const furnitureSegments = getFurnitureOccluderSegments(furnitureList);
+
     for (let cam of this.cameras) {
       if (cam.disabledTimer > 0) {
         cam.disabledTimer -= dt;
@@ -46,7 +49,7 @@ export class CameraSystem {
         let diff = (angleToThief - cam.currentAngle + Math.PI * 3) % (Math.PI * 2) - Math.PI;
 
         if (Math.abs(diff) <= cam.fov * 0.5) {
-          detected = hasLineOfSight(cam.x, cam.y, thief.x, thief.y, wallSegments, smokeClouds);
+          detected = hasLineOfSight(cam.x, cam.y, thief.x, thief.y, wallSegments, smokeClouds, furnitureSegments);
         }
       }
 
@@ -56,7 +59,6 @@ export class CameraSystem {
           alarmSystem.triggerDetection("CCTV INTRUDER CONFIRMED", 35);
           if (audioEngine) audioEngine.playAlarmAlert();
 
-          // Alert nearest guard
           for (let g of guards) {
             g.hearSound(cam.x, cam.y, 400);
           }

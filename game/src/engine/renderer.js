@@ -1,6 +1,7 @@
 /**
- * renderer.js - Tactical Noir Architectural Blueprint Renderer
- * Draws multi-room floorplans, procedural floor tiles, furniture, loot targets, and the thief.
+ * renderer.js - Tactical Noir Architectural Blueprint Renderer (v2)
+ * Renders thick architectural walls, procedural floor materials, character silhouettes,
+ * diegetic non-overlapping labels, and the tactical mission debrief scorecard.
  */
 
 export class GameRenderer {
@@ -25,23 +26,22 @@ export class GameRenderer {
     ctx.fillStyle = "#070C16";
     ctx.fillRect(0, 0, this.width, this.height);
 
-    // Minor blueprint grid
-    ctx.strokeStyle = "rgba(18, 42, 74, 0.45)";
+    // Minor blueprint grid (20px)
+    ctx.strokeStyle = "rgba(18, 42, 74, 0.40)";
     ctx.lineWidth = 0.5;
-    const gridSize = 20;
     ctx.beginPath();
-    for (let x = 0; x < this.width; x += gridSize) {
+    for (let x = 0; x < this.width; x += 20) {
       ctx.moveTo(x, 0);
       ctx.lineTo(x, this.height);
     }
-    for (let y = 0; y < this.height; y += gridSize) {
+    for (let y = 0; y < this.height; y += 20) {
       ctx.moveTo(0, y);
       ctx.lineTo(this.width, y);
     }
     ctx.stroke();
 
     // Major blueprint grid (100px)
-    ctx.strokeStyle = "rgba(28, 64, 112, 0.65)";
+    ctx.strokeStyle = "rgba(28, 64, 112, 0.60)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 0; x < this.width; x += 100) {
@@ -56,62 +56,109 @@ export class GameRenderer {
   }
 
   /**
-   * Renders room floors, carpets, and blueprint room labels.
+   * Renders room floors, carpets, and non-overlapping blueprint room badges.
    */
   renderRooms(level) {
     const ctx = this.ctx;
 
     for (let room of level.rooms) {
       ctx.save();
-      // Floor tint
+
+      // Floor procedural pattern
       if (level.floorType === "gallery") {
         ctx.fillStyle = "#0A1424";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        // Diamond tile pattern
-        ctx.strokeStyle = "rgba(22, 54, 90, 0.4)";
+        // Polished marble tiles
+        ctx.strokeStyle = "rgba(22, 54, 90, 0.35)";
         ctx.lineWidth = 0.5;
-        for (let tx = room.x; tx < room.x + room.w; tx += 24) {
-          for (let ty = room.y; ty < room.y + room.h; ty += 24) {
-            ctx.strokeRect(tx, ty, 24, 24);
+        for (let tx = room.x; tx < room.x + room.w; tx += 28) {
+          for (let ty = room.y; ty < room.y + room.h; ty += 28) {
+            ctx.strokeRect(tx, ty, 28, 28);
           }
         }
       } else if (level.floorType === "server") {
         ctx.fillStyle = "#07111D";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        // Data channel conduits
-        ctx.strokeStyle = "rgba(0, 180, 216, 0.15)";
+        // Industrial floor grate grid
+        ctx.strokeStyle = "rgba(0, 180, 216, 0.12)";
         ctx.lineWidth = 1;
-        ctx.strokeRect(room.x + 4, room.y + 4, room.w - 8, room.h - 8);
+        ctx.strokeRect(room.x + 3, room.y + 3, room.w - 6, room.h - 6);
+        for (let gx = room.x + 16; gx < room.x + room.w - 16; gx += 32) {
+          ctx.beginPath();
+          ctx.moveTo(gx, room.y + 4);
+          ctx.lineTo(gx, room.y + room.h - 4);
+          ctx.stroke();
+        }
       } else {
-        // Penthouse
+        // Penthouse luxury parquet
         ctx.fillStyle = "#0E1726";
         ctx.fillRect(room.x, room.y, room.w, room.h);
-        // Luxury border
-        ctx.strokeStyle = "rgba(212, 175, 55, 0.18)";
+        ctx.strokeStyle = "rgba(212, 175, 55, 0.15)";
         ctx.lineWidth = 1;
-        ctx.strokeRect(room.x + 6, room.y + 6, room.w - 12, room.h - 12);
+        ctx.strokeRect(room.x + 4, room.y + 4, room.w - 8, room.h - 8);
       }
 
-      // Room name & blueprint tag
-      ctx.font = "9px 'Courier New', monospace";
-      ctx.fillStyle = "rgba(0, 240, 255, 0.55)";
-      ctx.fillText(`[ ${room.tag} // ${room.name} ]`, room.x + 10, room.y + 18);
+      // Render velvet carpet runners if present
+      if (level.carpetRunners) {
+        for (let c of level.carpetRunners) {
+          ctx.fillStyle = c.color;
+          ctx.fillRect(c.x, c.y, c.w, c.h);
+          ctx.strokeStyle = "rgba(212, 175, 55, 0.4)";
+          ctx.lineWidth = 1;
+          ctx.strokeRect(c.x, c.y, c.w, c.h);
+        }
+      }
+
+      // Render glowing conduits if present
+      if (level.conduits) {
+        for (let cd of level.conduits) {
+          ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(cd.x1, cd.y1);
+          ctx.lineTo(cd.x2, cd.y2);
+          ctx.stroke();
+        }
+      }
+
+      // Compact Diegetic Room Title Badge (Anchored cleanly inside room, never overlapping furniture)
+      const badgeText = `[ ${room.tag} // ${room.name} ]`;
+      ctx.font = "bold 9px 'Courier New', monospace";
+      const bw = ctx.measureText(badgeText).width + 10;
+      ctx.fillStyle = "rgba(7, 12, 22, 0.85)";
+      ctx.fillRect(room.x + 8, room.y + 8, bw, 14);
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(room.x + 8, room.y + 8, bw, 14);
+
+      ctx.fillStyle = "#00F0FF";
+      ctx.fillText(badgeText, room.x + 13, room.y + 18);
 
       ctx.restore();
     }
   }
 
   /**
-   * Renders walls with blueprint double-line border style.
+   * Renders thick filled architectural walls with slate core and glowing blueprint centerline.
    */
   renderWalls(walls) {
     const ctx = this.ctx;
     ctx.save();
 
-    // Outer wall thick core
-    ctx.strokeStyle = "#1A365D";
-    ctx.lineWidth = 6;
+    // 1. Soft Wall Floor Drop-Shadow
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.lineWidth = 12;
     ctx.lineCap = "square";
+    ctx.beginPath();
+    for (let w of walls) {
+      ctx.moveTo(w.x1 + 2, w.y1 + 2);
+      ctx.lineTo(w.x2 + 2, w.y2 + 2);
+    }
+    ctx.stroke();
+
+    // 2. Thick Dark Slate Architectural Wall Fill
+    ctx.strokeStyle = "#0F172A";
+    ctx.lineWidth = 10;
     ctx.beginPath();
     for (let w of walls) {
       ctx.moveTo(w.x1, w.y1);
@@ -119,7 +166,17 @@ export class GameRenderer {
     }
     ctx.stroke();
 
-    // Architectural inner bright blueprint line
+    // 3. Inner Slate Bevel Edge
+    ctx.strokeStyle = "#1E293B";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    for (let w of walls) {
+      ctx.moveTo(w.x1, w.y1);
+      ctx.lineTo(w.x2, w.y2);
+    }
+    ctx.stroke();
+
+    // 4. Sharp Cyan Architectural Blueprint Centerline
     ctx.strokeStyle = "#00F0FF";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -133,16 +190,19 @@ export class GameRenderer {
   }
 
   /**
-   * Renders furniture, obstacles, and consoles.
+   * Renders furniture, obstacles, and consoles with drop shadows and detail.
    */
   renderFurniture(furniture) {
     const ctx = this.ctx;
     ctx.save();
 
     for (let item of furniture) {
+      // Furniture floor drop shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.fillRect(item.x + 2, item.y + 2, item.w, item.h);
+
       if (item.type === "vitrine") {
-        // Glass vitrine case
-        ctx.fillStyle = "rgba(0, 240, 255, 0.08)";
+        ctx.fillStyle = "rgba(0, 240, 255, 0.10)";
         ctx.fillRect(item.x, item.y, item.w, item.h);
         ctx.strokeStyle = "#00F0FF";
         ctx.lineWidth = 1.5;
@@ -155,13 +215,12 @@ export class GameRenderer {
         ctx.lineTo(item.x + item.w - 6, item.y + 6);
         ctx.stroke();
       } else if (item.type === "server") {
-        // High-tech server rack
         ctx.fillStyle = "#0B1522";
         ctx.fillRect(item.x, item.y, item.w, item.h);
         ctx.strokeStyle = "#1D4ED8";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(item.x, item.y, item.w, item.h);
-        // Blinking server LEDs
+        // Animated status LEDs
         for (let lx = item.x + 8; lx < item.x + item.w - 8; lx += 12) {
           const blink = (Math.sin(this.time * 6 + lx) > 0.1);
           ctx.fillStyle = blink ? "#00F0FF" : "#005577";
@@ -170,7 +229,6 @@ export class GameRenderer {
           ctx.fillRect(lx, item.y + item.h - 9, 4, 3);
         }
       } else if (item.type === "column" || item.type === "plinth") {
-        // Column / Plinth
         ctx.fillStyle = "#112238";
         ctx.fillRect(item.x, item.y, item.w, item.h);
         ctx.strokeStyle = "#38BDF8";
@@ -191,35 +249,42 @@ export class GameRenderer {
   }
 
   /**
-   * Renders the glowing loot target (Diamond, Quantum Cipher, or Sovereign Safe).
+   * Renders the glowing loot target with compact non-overlapping callout pill.
    */
   renderLoot(loot, isSecured) {
     const ctx = this.ctx;
     ctx.save();
 
-    const pulse = 0.8 + 0.2 * Math.sin(this.time * 4);
+    const pulse = 0.85 + 0.15 * Math.sin(this.time * 4);
 
     if (isSecured) {
-      // Empty pedestal indicator
       ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 4]);
       ctx.strokeRect(loot.x - 20, loot.y - 20, 40, 40);
-      ctx.font = "8px 'Courier New', monospace";
+
+      // Pill tag
+      ctx.fillStyle = "rgba(7, 12, 22, 0.9)";
+      ctx.fillRect(loot.x - 38, loot.y + 24, 76, 15);
+      ctx.strokeStyle = "#10B981";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(loot.x - 38, loot.y + 24, 76, 15);
+
+      ctx.font = "bold 8px 'Courier New', monospace";
       ctx.fillStyle = "#10B981";
-      ctx.fillText("LOOT SECURED", loot.x - 28, loot.y + 32);
+      ctx.fillText("[ LOOT SECURED ]", loot.x - 34, loot.y + 35);
       ctx.restore();
       return;
     }
 
     // Pedestal base
     ctx.fillStyle = "#0A1828";
-    ctx.fillRect(loot.x - 22, loot.y - 22, 44, 44);
+    ctx.fillRect(loot.x - 20, loot.y - 20, 40, 40);
     ctx.strokeStyle = loot.glowColor;
     ctx.lineWidth = 1.5;
-    ctx.strokeRect(loot.x - 22, loot.y - 22, 44, 44);
+    ctx.strokeRect(loot.x - 20, loot.y - 20, 40, 40);
 
-    // Glowing halo
+    // Glowing aura
     const grad = ctx.createRadialGradient(loot.x, loot.y, 4, loot.x, loot.y, loot.radius * pulse);
     grad.addColorStop(0, loot.glowColor);
     grad.addColorStop(0.5, "rgba(0, 240, 255, 0.35)");
@@ -230,55 +295,50 @@ export class GameRenderer {
     ctx.fill();
 
     if (loot.type === "diamond") {
-      // Multifaceted diamond vector
       ctx.save();
       ctx.translate(loot.x, loot.y);
       ctx.fillStyle = "#E0F7FA";
       ctx.strokeStyle = "#FFFFFF";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(0, -14);
-      ctx.lineTo(14, 0);
-      ctx.lineTo(0, 14);
-      ctx.lineTo(-14, 0);
+      ctx.moveTo(0, -13);
+      ctx.lineTo(13, 0);
+      ctx.lineTo(0, 13);
+      ctx.lineTo(-13, 0);
       ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      // Internal facets
-      ctx.beginPath();
-      ctx.moveTo(-14, 0);
-      ctx.lineTo(14, 0);
-      ctx.moveTo(0, -14);
-      ctx.lineTo(0, 14);
       ctx.strokeStyle = "#00F0FF";
+      ctx.beginPath();
+      ctx.moveTo(-13, 0);
+      ctx.lineTo(13, 0);
+      ctx.moveTo(0, -13);
+      ctx.lineTo(0, 13);
       ctx.stroke();
       ctx.restore();
     } else if (loot.type === "cube") {
-      // Rotating holographic quantum data cube
       ctx.save();
       ctx.translate(loot.x, loot.y);
       ctx.rotate(this.time * 0.8);
       ctx.fillStyle = "rgba(0, 240, 255, 0.4)";
       ctx.strokeStyle = "#00FFFF";
       ctx.lineWidth = 2;
-      ctx.strokeRect(-12, -12, 24, 24);
-      ctx.fillRect(-12, -12, 24, 24);
+      ctx.strokeRect(-11, -11, 22, 22);
+      ctx.fillRect(-11, -11, 22, 22);
       ctx.rotate(Math.PI / 4);
       ctx.strokeStyle = "#FFFFFF";
-      ctx.strokeRect(-8, -8, 16, 16);
+      ctx.strokeRect(-7, -7, 14, 14);
       ctx.restore();
     } else {
-      // Master Titanium Safe Door
       ctx.save();
       ctx.translate(loot.x, loot.y);
       ctx.fillStyle = "#1E293B";
       ctx.beginPath();
-      ctx.arc(0, 0, 16, 0, Math.PI * 2);
+      ctx.arc(0, 0, 15, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = "#F59E0B";
       ctx.lineWidth = 3;
       ctx.stroke();
-      // Safe dial spoke wheel
       ctx.rotate(this.time * 0.5);
       ctx.strokeStyle = "#FDE68A";
       ctx.lineWidth = 2;
@@ -286,24 +346,30 @@ export class GameRenderer {
         ctx.rotate(Math.PI / 2);
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.lineTo(12, 0);
+        ctx.lineTo(11, 0);
         ctx.stroke();
       }
       ctx.restore();
     }
 
-    // Diegetic target callout
-    ctx.font = "bold 9px 'Courier New', monospace";
+    // Compact loot badge pill cleanly below pedestal
+    const pillText = `[E] SECURE ${loot.name.slice(0, 18)}`;
+    ctx.font = "bold 8px 'Courier New', monospace";
+    const pw = ctx.measureText(pillText).width + 12;
+    ctx.fillStyle = "rgba(7, 12, 22, 0.92)";
+    ctx.fillRect(loot.x - pw * 0.5, loot.y + 24, pw, 15);
+    ctx.strokeStyle = loot.glowColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(loot.x - pw * 0.5, loot.y + 24, pw, 15);
+
     ctx.fillStyle = "#FFFFFF";
-    ctx.fillText("TARGET OBJECTIVE", loot.x - 42, loot.y - 28);
-    ctx.fillStyle = loot.glowColor;
-    ctx.fillText(`${loot.name} [E]`, loot.x - 48, loot.y + 34);
+    ctx.fillText(pillText, loot.x - pw * 0.5 + 6, loot.y + 35);
 
     ctx.restore();
   }
 
   /**
-   * Renders the extraction zone.
+   * Renders the extraction zone with safe margins.
    */
   renderExtraction(exfil, isUnlocked) {
     const ctx = this.ctx;
@@ -312,21 +378,24 @@ export class GameRenderer {
     const color = isUnlocked ? "#10B981" : "#64748B";
     ctx.strokeStyle = color;
     ctx.lineWidth = 2;
-    ctx.setLineDash(isUnlocked ? [6, 4] : [2, 2]);
+    ctx.setLineDash(isUnlocked ? [6, 4] : [3, 3]);
     ctx.strokeRect(exfil.x, exfil.y, exfil.w, exfil.h);
 
-    ctx.fillStyle = isUnlocked ? "rgba(16, 185, 129, 0.15)" : "rgba(100, 116, 139, 0.05)";
+    ctx.fillStyle = isUnlocked ? "rgba(16, 185, 129, 0.16)" : "rgba(100, 116, 139, 0.06)";
     ctx.fillRect(exfil.x, exfil.y, exfil.w, exfil.h);
 
+    // Centered status badge inside extraction bounds
+    const tag = isUnlocked ? ">> EXFIL READY <<" : "[ LOCKED: GET LOOT ]";
     ctx.font = "bold 8px 'Courier New', monospace";
+    const tw = ctx.measureText(tag).width;
     ctx.fillStyle = color;
-    ctx.fillText(isUnlocked ? ">> EXFIL READY <<" : "LOCKED: GET LOOT", exfil.x - 2, exfil.y - 8);
+    ctx.fillText(tag, exfil.x + (exfil.w - tw) * 0.5, exfil.y + exfil.h * 0.5 + 3);
 
     ctx.restore();
   }
 
   /**
-   * Renders interactive hacking terminals.
+   * Renders interactive hacking terminals with compact pill tags.
    */
   renderTerminals(terminals, thief) {
     const ctx = this.ctx;
@@ -339,18 +408,25 @@ export class GameRenderer {
       ctx.lineWidth = 1.5;
       ctx.strokeRect(term.x - 12, term.y - 12, 24, 24);
 
-      // Terminal screen
       ctx.fillStyle = term.hacked ? "#10B981" : "#00F0FF";
       ctx.fillRect(term.x - 8, term.y - 8, 16, 16);
 
-      ctx.font = "8px 'Courier New', monospace";
-      ctx.fillStyle = term.hacked ? "#10B981" : "#FFFFFF";
-      ctx.fillText(term.hacked ? "OVERRIDDEN" : `${term.label} [E]`, term.x - 30, term.y - 16);
+      // Compact Pill Tag cleanly below console
+      const tagText = term.hacked ? "[ OVERRIDDEN ]" : `[E] ${term.label}`;
+      ctx.font = "bold 8px 'Courier New', monospace";
+      const pw = ctx.measureText(tagText).width + 10;
+      ctx.fillStyle = "rgba(7, 12, 22, 0.90)";
+      ctx.fillRect(term.x - pw * 0.5, term.y + 16, pw, 14);
+      ctx.strokeStyle = term.hacked ? "#10B981" : "#00F0FF";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(term.x - pw * 0.5, term.y + 16, pw, 14);
 
-      // Range indicator if player is near
+      ctx.fillStyle = term.hacked ? "#10B981" : "#FFFFFF";
+      ctx.fillText(tagText, term.x - pw * 0.5 + 5, term.y + 26);
+
       const dist = Math.hypot(thief.x - term.x, thief.y - term.y);
       if (dist < 45 && !term.hacked) {
-        ctx.strokeStyle = "rgba(0, 240, 255, 0.5)";
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.45)";
         ctx.lineWidth = 1;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
@@ -363,14 +439,14 @@ export class GameRenderer {
   }
 
   /**
-   * Renders the thief operative with dynamic posture, goggles, and mouse aimline.
+   * Renders the thief operative as a sleek top-down tactical silhouette.
    */
   renderThief(thief, mouseX, mouseY) {
     const ctx = this.ctx;
     ctx.save();
 
-    // Subtle tactical aim line towards mouse
-    ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+    // Aim laser line
+    ctx.strokeStyle = "rgba(0, 240, 255, 0.28)";
     ctx.lineWidth = 1;
     ctx.setLineDash([2, 4]);
     ctx.beginPath();
@@ -379,32 +455,50 @@ export class GameRenderer {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Thief body
+    // Stealth noise suppression ring when sneaking
+    if (thief.isSneaking) {
+      ctx.strokeStyle = "rgba(0, 240, 255, 0.16)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(thief.x, thief.y, 22, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
     ctx.translate(thief.x, thief.y);
     ctx.rotate(thief.facing);
 
-    // Shadow
-    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    // Drop shadow
+    ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
     ctx.beginPath();
-    ctx.ellipse(0, 2, 9, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 2, 10, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Stealth suit torso
-    ctx.fillStyle = thief.isSneaking ? "#0F2137" : (thief.isSprinting ? "#1A365D" : "#132338");
+    // Tactical Operative Shoulders (Athletic canted oval)
+    ctx.fillStyle = "#0F1E33";
     ctx.beginPath();
-    ctx.arc(0, 0, 8, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "#00F0FF";
     ctx.lineWidth = 1.2;
     ctx.stroke();
 
-    // Twin glowing emerald night-vision goggle optics
-    ctx.fillStyle = "#10B981";
-    ctx.shadowColor = "#10B981";
+    // Tactical harness straps
+    ctx.fillStyle = "#1E3A5F";
+    ctx.fillRect(-3, -5, 6, 10);
+
+    // Hooded head
+    ctx.fillStyle = "#0A1322";
+    ctx.beginPath();
+    ctx.arc(2, 0, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Twin glowing emerald night-vision visor optics
+    ctx.fillStyle = "#00F0FF";
+    ctx.shadowColor = "#00F0FF";
     ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(5, -3, 1.8, 0, Math.PI * 2);
-    ctx.arc(5, 3, 1.8, 0, Math.PI * 2);
+    ctx.arc(6, -2.2, 1.6, 0, Math.PI * 2);
+    ctx.arc(6, 2.2, 1.6, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
 
@@ -412,7 +506,7 @@ export class GameRenderer {
   }
 
   /**
-   * Renders wall-mounted security cameras.
+   * Renders wall-mounted security camera turret housings.
    */
   renderCameras(cameras) {
     const ctx = this.ctx;
@@ -423,18 +517,18 @@ export class GameRenderer {
       ctx.translate(cam.x, cam.y);
       ctx.rotate(cam.currentAngle);
 
-      // Camera base housing
+      // Camera base bracket
       ctx.fillStyle = "#1E293B";
       ctx.fillRect(-6, -6, 12, 12);
       ctx.strokeStyle = cam.alerted ? "#FF003C" : "#00F0FF";
       ctx.lineWidth = 1.5;
       ctx.strokeRect(-6, -6, 12, 12);
 
-      // Camera lens barrel
+      // Turret lens barrel
       ctx.fillStyle = "#0F172A";
       ctx.fillRect(4, -3, 8, 6);
 
-      // Pulsing recording LED
+      // Blinking status diode
       const ledGlow = Math.sin(this.time * 8) > 0;
       ctx.fillStyle = cam.disabledTimer > 0 ? "#64748B" : (cam.alerted ? "#FF003C" : (ledGlow ? "#EF4444" : "#7F1D1D"));
       ctx.beginPath();
@@ -448,46 +542,234 @@ export class GameRenderer {
   }
 
   /**
-   * Renders patrolling guards with tactical uniforms and state alerts.
+   * Renders guards with top-down armored tactical sentry silhouettes & patrol paths.
    */
   renderGuards(guards) {
     const ctx = this.ctx;
     ctx.save();
 
     for (let g of guards) {
+      // Subtle dotted patrol route trail
+      if (g.patrol && g.patrol.length > 1) {
+        ctx.strokeStyle = "rgba(0, 240, 255, 0.12)";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 4]);
+        ctx.beginPath();
+        ctx.moveTo(g.patrol[0].x, g.patrol[0].y);
+        for (let p = 1; p < g.patrol.length; p++) {
+          ctx.lineTo(g.patrol[p].x, g.patrol[p].y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
       ctx.save();
       ctx.translate(g.x, g.y);
 
-      // Status indicator bubble above guard head
+      // Alert marker badge
       if (g.state === "ALERT") {
         ctx.fillStyle = "#FF003C";
         ctx.font = "bold 13px 'Courier New', monospace";
-        ctx.fillText("(!)", -10, -16);
+        ctx.fillText("(!)", -10, -18);
       } else if (g.state === "INVESTIGATING" || g.state === "SUSPICIOUS") {
         ctx.fillStyle = "#F59E0B";
         ctx.font = "bold 13px 'Courier New', monospace";
-        ctx.fillText("(?)", -10, -16);
+        ctx.fillText("(?)", -10, -18);
       }
 
       ctx.rotate(g.facing);
 
-      // Guard body
+      // Drop shadow
+      ctx.fillStyle = "rgba(0, 0, 0, 0.55)";
+      ctx.beginPath();
+      ctx.ellipse(0, 2, 11, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Armored sentry shoulders
       ctx.fillStyle = g.state === "ALERT" ? "#7F1D1D" : "#1E293B";
       ctx.beginPath();
-      ctx.arc(0, 0, 9, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, 10, 7, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.strokeStyle = g.state === "ALERT" ? "#FF003C" : (g.state === "INVESTIGATING" ? "#F59E0B" : "#64748B");
-      ctx.lineWidth = 1.8;
+      ctx.lineWidth = 1.6;
       ctx.stroke();
 
-      // Guard flashlight / visor front indicator
-      ctx.fillStyle = "#F1F5F9";
+      // Tactical vest center plate
+      ctx.fillStyle = "#334155";
+      ctx.fillRect(-3, -4, 6, 8);
+
+      // Security helmet
+      ctx.fillStyle = "#0F172A";
       ctx.beginPath();
-      ctx.arc(6, 0, 3, 0, Math.PI * 2);
+      ctx.arc(2, 0, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flashlight emitter in hand
+      ctx.fillStyle = "#F8FAFC";
+      ctx.beginPath();
+      ctx.arc(8, 3, 2.5, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.restore();
     }
+
+    ctx.restore();
+  }
+
+  /**
+   * Renders sleek translucent tactical scorecard overlay for Shot 4 and victory.
+   */
+  renderDebriefScorecard(ctx) {
+    ctx.save();
+
+    // Dim background blueprint
+    ctx.fillStyle = "rgba(4, 8, 16, 0.78)";
+    ctx.fillRect(0, 0, this.width, this.height);
+
+    // Central Glassmorphic Card (920 x 360)
+    const cw = 920;
+    const ch = 350;
+    const cx = (this.width - cw) * 0.5;
+    const cy = 52;
+
+    ctx.fillStyle = "rgba(10, 18, 32, 0.94)";
+    ctx.fillRect(cx, cy, cw, ch);
+    ctx.strokeStyle = "#00F0FF";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cx, cy, cw, ch);
+
+    // Decorative corner ticks
+    const tickLen = 14;
+    ctx.strokeStyle = "#FFFFFF";
+    ctx.lineWidth = 2;
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + tickLen);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx + tickLen, cy);
+    ctx.stroke();
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(cx + cw - tickLen, cy);
+    ctx.lineTo(cx + cw, cy);
+    ctx.lineTo(cx + cw, cy + tickLen);
+    ctx.stroke();
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + ch - tickLen);
+    ctx.lineTo(cx, cy + ch);
+    ctx.lineTo(cx + tickLen, cy + ch);
+    ctx.stroke();
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(cx + cw - tickLen, cy + ch);
+    ctx.lineTo(cx + cw, cy + ch);
+    ctx.lineTo(cx + cw, cy + ch - tickLen);
+    ctx.stroke();
+
+    // Header Banner
+    ctx.font = "bold 15px 'Courier New', monospace";
+    ctx.fillStyle = "#00F0FF";
+    ctx.fillText("MISSION DEBRIEF // HEIST ACCOMPLISHED", cx + 24, cy + 32);
+
+    ctx.font = "10px 'Courier New', monospace";
+    ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
+    ctx.fillText("SYNDICATE RECOVERY OPERATION // CLASSIFIED INTEL", cx + 24, cy + 48);
+
+    // Rank Badge
+    ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
+    ctx.fillRect(cx + cw - 260, cy + 18, 236, 40);
+    ctx.strokeStyle = "#10B981";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(cx + cw - 260, cy + 18, 236, 40);
+
+    ctx.font = "bold 13px 'Courier New', monospace";
+    ctx.fillStyle = "#10B981";
+    ctx.fillText("RANK: S [GHOST OPERATIVE]", cx + cw - 248, cy + 42);
+
+    // Divider Line
+    ctx.strokeStyle = "rgba(0, 240, 255, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx + 24, cy + 68);
+    ctx.lineTo(cx + cw - 24, cy + 68);
+    ctx.stroke();
+
+    // Metrics Stats Columns
+    const stats = [
+      { label: "TARGET VALUATION", val: "$62,500,000", color: "#F59E0B" },
+      { label: "DETECTIONS LOGGED", val: "00 [GHOST]", color: "#10B981" },
+      { label: "ALARM LOCKDOWNS", val: "00 [CLEAN]", color: "#10B981" },
+      { label: "GADGETS DEPLOYED", val: "03 [1 COIN, 1 EMP, 1 SMOKE]", color: "#38BDF8" },
+      { label: "ELAPSED INFIL TIME", val: "02:41.8", color: "#F1F5F9" }
+    ];
+
+    stats.forEach((st, idx) => {
+      const sy = cy + 96 + idx * 26;
+      ctx.font = "bold 9px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.85)";
+      ctx.fillText(st.label, cx + 32, sy);
+
+      ctx.font = "bold 11px 'Courier New', monospace";
+      ctx.fillStyle = st.color;
+      ctx.fillText(st.val, cx + 240, sy);
+    });
+
+    // Right Column: 3-Floor Progression Cards
+    const cards = [
+      {
+        floor: "CONTRACT 01",
+        title: "THE LUMINARY GALLERY",
+        loot: "STAR OF ALEXANDRIA",
+        status: "COMPLETED 100%",
+        color: "#00F0FF"
+      },
+      {
+        floor: "CONTRACT 02",
+        title: "THE OBSIDIAN MAINFRAME",
+        loot: "QUANTUM CRYPTO CIPHER",
+        status: "COMPLETED 100%",
+        color: "#38BDF8"
+      },
+      {
+        floor: "CONTRACT 03",
+        title: "THE SOVEREIGN SANCTUM",
+        loot: "MASTER TITANIUM SAFE",
+        status: "COMPLETED 100%",
+        color: "#F59E0B"
+      }
+    ];
+
+    cards.forEach((cd, idx) => {
+      const cardY = cy + 86 + idx * 72;
+      const cardX = cx + 520;
+      const cardW = 360;
+      const cardH = 62;
+
+      ctx.fillStyle = "rgba(15, 23, 42, 0.80)";
+      ctx.fillRect(cardX, cardY, cardW, cardH);
+      ctx.strokeStyle = cd.color;
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      ctx.font = "bold 9px 'Courier New', monospace";
+      ctx.fillStyle = cd.color;
+      ctx.fillText(`[ ${cd.floor} // ${cd.status} ]`, cardX + 12, cardY + 18);
+
+      ctx.font = "bold 11px 'Courier New', monospace";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillText(cd.title, cardX + 12, cardY + 36);
+
+      ctx.font = "9px 'Courier New', monospace";
+      ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+      ctx.fillText(`TARGET: ${cd.loot}`, cardX + 12, cardY + 52);
+    });
+
+    // Footer Action Prompt
+    ctx.font = "bold 10px 'Courier New', monospace";
+    ctx.fillStyle = "#00F0FF";
+    ctx.fillText("PRESS [SPACE] TO REDEPLOY OPERATIVE  //  PRESS [R] TO REPLAY FROM FLOOR 1", cx + 24, cy + ch - 18);
 
     ctx.restore();
   }

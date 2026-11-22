@@ -13,8 +13,8 @@
 | 01. The Luminary Gallery (Hero Stealth) | 02. The Obsidian Mainframe (Gadget Distraction) |
 | :---: | :---: |
 | ![Gallery Stealth](screenshots/01-gallery-stealth.png) | ![Gadget Distraction](screenshots/02-gadget-distraction.png) |
-| **03. High-Alert Vault Extraction (Lockdown)** | **04. Penthouse Sovereign Safe (Tactical Exfil)** |
-| ![Vault Lockdown](screenshots/03-vault-lockdown.png) | ![Penthouse Extraction](screenshots/04-penthouse-extraction.png) |
+| **03. High-Alert Vault Extraction (Lockdown)** | **04. Mission Debrief (Tactical Scorecard)** |
+| ![Vault Lockdown](screenshots/03-vault-lockdown.png) | ![Mission Debrief](screenshots/04-heist-complete.png) |
 
 ---
 

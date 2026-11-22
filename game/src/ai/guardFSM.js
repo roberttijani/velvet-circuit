@@ -1,9 +1,10 @@
 /**
- * guardFSM.js - Guard AI Finite State Machine & Patrol Engine
- * Controls patrol navigation, audio suspicion, investigation, and vision detection.
+ * guardFSM.js - Guard AI Finite State Machine & Patrol Engine (v2)
+ * Features dynamic obstacle occlusion from pillars and server racks, audio suspicion,
+ * investigative search patterns, and aggressive line-of-sight pursuit.
  */
 
-import { hasLineOfSight } from '../world/raycast.js';
+import { hasLineOfSight, getFurnitureOccluderSegments } from '../world/raycast.js';
 
 export class GuardFSM {
   constructor(config) {
@@ -12,8 +13,8 @@ export class GuardFSM {
     this.x = config.x;
     this.y = config.y;
     this.facing = config.facing || 0;
-    this.speed = config.speed || 60;
-    this.viewDist = config.viewDist || 210;
+    this.speed = config.speed || 65;
+    this.viewDist = config.viewDist || 215;
     this.fov = config.fov || 1.25;
     this.patrol = config.patrol || [];
     this.currentWaypoint = 0;
@@ -24,16 +25,16 @@ export class GuardFSM {
     this.investigateTarget = null;
     this.investigateTimer = 0;
     this.seeThiefTimer = 0;
-    this.searchScanAngle = 0;
   }
 
-  update(dt, thief, wallSegments, smokeClouds, alarmSystem, audioEngine) {
+  update(dt, thief, wallSegments, smokeClouds, alarmSystem, audioEngine, furnitureList = []) {
+    const furnitureSegments = getFurnitureOccluderSegments(furnitureList);
+
     // 1. Vision Check against thief
-    const canSeeThief = this.checkVision(thief, wallSegments, smokeClouds);
+    const canSeeThief = this.checkVision(thief, wallSegments, smokeClouds, furnitureSegments);
 
     if (canSeeThief) {
       this.seeThiefTimer += dt;
-      // If sneaking in shadows, detection takes slightly longer than running
       const detectThreshold = thief.isSneaking ? 0.45 : 0.15;
       if (this.seeThiefTimer >= detectThreshold) {
         if (this.state !== "ALERT") {
@@ -41,14 +42,12 @@ export class GuardFSM {
           alarmSystem.triggerDetection("GUARD VISUAL CONTACT", 45);
           if (audioEngine) audioEngine.playAlarmAlert();
         }
-        // Turn directly to face thief
         this.facing = Math.atan2(thief.y - this.y, thief.x - this.x);
         this.investigateTarget = { x: thief.x, y: thief.y };
       }
     } else {
       this.seeThiefTimer = Math.max(0, this.seeThiefTimer - dt * 1.5);
       if (this.state === "ALERT" && this.seeThiefTimer <= 0) {
-        // Lost visual, transition to investigating last known position
         this.state = "INVESTIGATING";
         this.investigateTimer = 4.0;
       }
@@ -69,26 +68,24 @@ export class GuardFSM {
         break;
 
       case "ALERT":
-        this.updateAlert(dt, thief, wallSegments);
+        this.updateAlert(dt, thief);
         break;
     }
   }
 
-  checkVision(thief, wallSegments, smokeClouds) {
+  checkVision(thief, wallSegments, smokeClouds, furnitureSegments) {
     const dx = thief.x - this.x;
     const dy = thief.y - this.y;
     const dist = Math.hypot(dx, dy);
 
     if (dist > this.viewDist) return false;
 
-    // Angle check
     const angleToThief = Math.atan2(dy, dx);
     let diff = (angleToThief - this.facing + Math.PI * 3) % (Math.PI * 2) - Math.PI;
 
     if (Math.abs(diff) > this.fov * 0.5) return false;
 
-    // Occlusion check
-    return hasLineOfSight(this.x, this.y, thief.x, thief.y, wallSegments, smokeClouds);
+    return hasLineOfSight(this.x, this.y, thief.x, thief.y, wallSegments, smokeClouds, furnitureSegments);
   }
 
   updatePatrol(dt) {
@@ -96,7 +93,6 @@ export class GuardFSM {
 
     if (this.waitTimer > 0) {
       this.waitTimer -= dt;
-      // Gentle head sweep while waiting
       this.facing += Math.sin(this.waitTimer * 2.5) * dt * 0.4;
       return;
     }
@@ -149,7 +145,6 @@ export class GuardFSM {
       this.x += Math.cos(this.facing) * (this.speed * 1.1) * dt;
       this.y += Math.sin(this.facing) * (this.speed * 1.1) * dt;
     } else {
-      // Arrived at disturbance location, search around
       this.investigateTimer -= dt;
       this.facing += dt * 1.8;
       if (this.investigateTimer <= 0) {
@@ -160,7 +155,6 @@ export class GuardFSM {
   }
 
   updateAlert(dt, thief) {
-    // Aggressive pursuit towards thief
     const dx = thief.x - this.x;
     const dy = thief.y - this.y;
     const targetAngle = Math.atan2(dy, dx);
